@@ -1878,6 +1878,42 @@
   </div>
 
   <!-- ==========================================
+       מודל: שחזור כספת (Recovery Modal)
+       ========================================== -->
+  <div class="modal-overlay" id="recoveryModal" style="display: none;">
+    <div class="modal-container glass-panel" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 class="modal-title">🔐 שחזור כספת</h3>
+        <button class="modal-close-btn" onclick="closeRecoveryModal()">✕</button>
+      </div>
+      <form id="recoveryForm" onsubmit="submitRecovery(event)" class="modal-form-column">
+        <p class="input-help" style="font-size: 13px; line-height: 1.6;">
+          קיבלת קישור שחזור חד-פעמי במייל. הזן את מפתח השחזור שקיבלת ואת סיסמת המאסטר החדשה שבחרת.
+        </p>
+        <div class="form-group">
+          <label for="recoveryKeyInput">מפתח שחזור (נשלח אליך במייל):</label>
+          <input type="text" id="recoveryKeyInput" placeholder="הדבק את מפתח השחזור מהמייל..." required autocomplete="off" dir="ltr">
+          <span class="input-icon">🔑</span>
+        </div>
+        <div class="form-group">
+          <label for="recoveryNewPassword">סיסמת מאסטר חדשה (לפחות 4 תווים):</label>
+          <input type="password" id="recoveryNewPassword" placeholder="הקלד סיסמה חדשה..." required minlength="4">
+          <span class="input-icon">🔒</span>
+        </div>
+        <div class="form-group">
+          <label for="recoveryConfirmPassword">אימות הסיסמה החדשה:</label>
+          <input type="password" id="recoveryConfirmPassword" placeholder="הקלד שוב את הסיסמה..." required minlength="4">
+          <span class="input-icon">✅</span>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeRecoveryModal()">ביטול</button>
+          <button type="submit" class="btn-submit" id="recoverySubmitBtn" style="margin-top: 0; width: auto; padding: 10px 24px;">שחזר כספת 🔓</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==========================================
        חלק קוד הלוגיקה והקריפטוגרפיה (JavaScript)
        ========================================== -->
     <script>
@@ -2660,25 +2696,59 @@
       }
     }
 
-    async function handleRecoveryLink() {
+    let _recoveryToken = "";
+    let _recoveryEmail = "";
+
+    function handleRecoveryLink() {
       const params = new URLSearchParams(location.search);
       const token = params.get("reset");
       const email = (params.get("email") || "").trim().toLowerCase();
       if (!token || !email) return;
 
-      const recoveryKeyRaw = prompt("הזן את מפתח השחזור שקיבלת במייל:");
-      if (!recoveryKeyRaw) return;
-      const newPassword = prompt("הזן סיסמת מאסטר חדשה. אם אתה זוכר את הסיסמה הישנה, ניתן לבחור בה שוב:");
+      _recoveryToken = token;
+      _recoveryEmail = email;
+      document.getElementById("recoveryKeyInput").value = "";
+      document.getElementById("recoveryNewPassword").value = "";
+      document.getElementById("recoveryConfirmPassword").value = "";
+      const modal = document.getElementById("recoveryModal");
+      modal.style.display = "flex";
+      modal.classList.add("active");
+      setTimeout(() => document.getElementById("recoveryKeyInput").focus(), 100);
+    }
+
+    function closeRecoveryModal() {
+      const modal = document.getElementById("recoveryModal");
+      modal.style.display = "none";
+      modal.classList.remove("active");
+      _recoveryToken = "";
+      _recoveryEmail = "";
+    }
+
+    async function submitRecovery(e) {
+      e.preventDefault();
+      const token = _recoveryToken;
+      const email = _recoveryEmail;
+      const recoveryKeyRaw = document.getElementById("recoveryKeyInput").value.trim();
+      const newPassword = document.getElementById("recoveryNewPassword").value;
+      const confirmPassword = document.getElementById("recoveryConfirmPassword").value;
+
+      if (!recoveryKeyRaw) {
+        showToast("הזן את מפתח השחזור שקיבלת במייל.", "error");
+        return;
+      }
       if (!newPassword || newPassword.length < 4) {
         showToast("הסיסמה חייבת להיות באורך 4 תווים לפחות.", "error");
         return;
       }
-      const confirmPassword = prompt("הקלד שוב את הסיסמה החדשה:");
       if (newPassword !== confirmPassword) {
         showToast("הסיסמאות אינן תואמות.", "error");
         return;
       }
 
+      const submitBtn = document.getElementById("recoverySubmitBtn");
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = "משחזר כספת... ⏳";
       try {
         const packageResponse = await fetch(DEVELOPER_SCRIPT_URL, {
           method: "POST",
@@ -2744,11 +2814,15 @@
         accounts = recovered.accounts || [];
         writeLocalVaultCache(false);
         history.replaceState({}, document.title, location.pathname);
+        closeRecoveryModal();
         showScreen("dashboardScreen");
         initDashboard();
         showToast("הכספת שוחזרה בהצלחה. בחרת סיסמת מאסטר חדשה.", "success");
       } catch (err) {
         showToast("שחזור הכספת נכשל: " + err.message, "error");
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
       }
     }
 
