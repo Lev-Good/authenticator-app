@@ -10,7 +10,7 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>false</SelfContained>
     <PublishReadyToRun>false</PublishReadyToRun>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Product>MasterAuthenticator</Product>
     <Description>Master Authenticator - מנהל סיסמאות ו-TOTP</Description>
   </PropertyGroup>

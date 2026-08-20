@@ -135,6 +135,36 @@
             </Setter>
         </Style>
 
+        <!-- Dark RadioButton for the sync-mode setting -->
+        <Style x:Key="DarkRadioButton" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <Grid Width="16" Height="16" Margin="0,0,8,0" VerticalAlignment="Center">
+                                <Ellipse x:Name="Outer" Stroke="#94A3B8" StrokeThickness="1.5"/>
+                                <Ellipse x:Name="Inner" Width="8" Height="8" Fill="#8b5cf6" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Outer" Property="Stroke" Value="#c4b5fd"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Outer" Property="Stroke" Value="#8b5cf6"/>
+                                <Setter TargetName="Inner" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background">
                 <Setter.Value>
@@ -290,12 +320,51 @@
             <!-- Main Work Area -->
             <Grid Margin="0,40,0,0">
                 
+                <!-- 0. FIRST-RUN SETUP SCREEN (sync mode choice) -->
+                <Grid x:Name="SetupScreen" Visibility="Collapsed">
+                    <Border CornerRadius="12" Width="620" Background="#900F172A" BorderBrush="#15FFFFFF" BorderThickness="1.5" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="35">
+                        <StackPanel>
+                            <TextBlock Text="🛡️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                            <TextBlock Text="ברוך הבא ל-Master Authenticator!" Foreground="#F8FAFC" FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="לפני שמתחילים, בחר כיצד התוכנה תנהל את הכספת שלך. ניתן לשנות את הבחירה בכל זמן מההגדרות." Foreground="#94A3B8" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,25"/>
+
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Option 1: Synced mode -->
+                                <Border x:Name="SyncOptionCard" Grid.Column="0" CornerRadius="12" Background="#401E293B" BorderBrush="#8b5cf6" BorderThickness="2" Padding="18" Cursor="Hand" MouseLeftButtonDown="SyncOptionCard_Click" Margin="0,0,7,0">
+                                    <StackPanel>
+                                        <TextBlock Text="☁️ מסונכרן עם השרת" Foreground="#F8FAFC" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                                        <TextBlock Text="הכספת נשמרת בענן ומגובה, עם שחזור סיסמה במייל. הנתונים מוצפנים בצד הלקוח." Foreground="#94A3B8" FontSize="12" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="SyncOptionCheck" Text="✔ נבחר (מומלץ)" Foreground="#8b5cf6" FontSize="12" FontWeight="Bold" Margin="0,10,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Option 2: Offline mode -->
+                                <Border x:Name="OfflineOptionCard" Grid.Column="1" CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1.5" Padding="18" Cursor="Hand" MouseLeftButtonDown="OfflineOptionCard_Click" Margin="7,0,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="📴 אופליין מלא" Foreground="#F8FAFC" FontSize="16" FontWeight="Bold" Margin="0,0,0,8"/>
+                                        <TextBlock Text="ללא שום קשר לשרת: הכספת נשמרת במחשב זה בלבד, בלי גיבוי בענן ובלי שחזור במייל." Foreground="#94A3B8" FontSize="12" TextWrapping="Wrap"/>
+                                        <TextBlock x:Name="OfflineOptionCheck" Text="✔ נבחר" Foreground="#a78bfa" FontSize="12" FontWeight="Bold" Margin="0,10,0,0" Visibility="Collapsed"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <Button Content="המשך 🚀" Style="{StaticResource ModernButton}" Background="#8b5cf6" Height="42" FontSize="15" Click="SetupContinue_Click" Margin="0,25,0,0"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
                 <!-- 1. CONNECTION & LOCK SCREEN -->
                 <Grid x:Name="LockScreen" Visibility="Collapsed">
                     <Border CornerRadius="12" Width="400" Height="Auto" Background="#900F172A" BorderBrush="#15FFFFFF" BorderThickness="1.5" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="30">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="☁️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,15"/>
-                            <TextBlock Text="חיבור מאובטח לענן" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="LockIcon" Text="☁️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                            <TextBlock x:Name="LockTitleText" Text="חיבור מאובטח לענן" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock x:Name="LockModeHint" Text="📴 מצב אופליין פעיל — הכספת נפתחת מהמחשב הזה בלבד, ללא שום קשר לשרת." Foreground="#a78bfa" FontSize="13" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Visibility="Collapsed" Margin="0,0,0,8"/>
                             <TextBlock Text="הזן את כתובת האימייל וסיסמת המאסטר שלך לטעינה ופיענוח של הכספת." Foreground="#94A3B8" FontSize="14" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,25"/>
 
                             <TextBlock Text="כתובת אימייל:" Foreground="#94A3B8" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
@@ -677,6 +746,18 @@
                                             <TextBox x:Name="SettingsEmail" Style="{StaticResource ModernTextBox}" Tag="example@gmail.com" Margin="0,0,0,10"/>
                                             <TextBlock Text="כתובת המייל אליה תישלח סיסמת המאסטר במקרה של שכחה. שרת הגיבוי המרכזי ישלח לכתובת זו מייל שחזור מאובטח." Foreground="#64748b" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,15"/>
                                             <Button Content="שמור כתובת מייל 💾" Style="{StaticResource ModernButton}" Background="#8b5cf6" Click="SaveSettingsEmail_Click"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Card: Sync Mode -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#1510B981" BorderThickness="1" Width="330" Margin="10" Padding="20">
+                                        <StackPanel>
+                                            <TextBlock Text="🛡️ מצב סנכרון עם השרת" Foreground="#F8FAFC" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                                            <TextBlock Text="בחר כיצד התוכנה תנהל את הכספת שלך — גם מי שלא סומך על השרת יכול לעבוד באופליין מלא:" Foreground="#94A3B8" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,12"/>
+                                            <RadioButton x:Name="SyncModeRadio" Style="{StaticResource DarkRadioButton}" GroupName="SyncModeGroup" Content="☁️ מסונכרן עם השרת (מומלץ)" Margin="0,0,0,5" Checked="SyncModeRadio_Checked"/>
+                                            <TextBlock Text="הכספת נשמרת בענן עם שחזור סיסמה במייל. הנתונים מוצפנים בצד הלקוח." Foreground="#64748b" FontSize="11" TextWrapping="Wrap" Margin="24,0,0,12"/>
+                                            <RadioButton x:Name="OfflineModeRadio" Style="{StaticResource DarkRadioButton}" GroupName="SyncModeGroup" Content="📴 אופליין מלא — ללא קשר לשרת" Margin="0,0,0,5" Checked="OfflineModeRadio_Checked"/>
+                                            <TextBlock Text="התוכנה לא תיצור שום חיבור לשרת: הכספת נשמרת במחשב זה בלבד, בלי גיבוי בענן ובלי שחזור במייל." Foreground="#64748b" FontSize="11" TextWrapping="Wrap" Margin="24,0,0,0"/>
                                         </StackPanel>
                                     </Border>
 

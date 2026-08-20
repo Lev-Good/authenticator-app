@@ -30,6 +30,11 @@ namespace MasterAuthenticator
         public string tag { get; set; } = "";
     }
 
+    public class AppSettings
+    {
+        public bool OfflineMode { get; set; }
+    }
+
     public class VaultData
     {
         public string Salt { get; set; } = "";
@@ -58,6 +63,9 @@ namespace MasterAuthenticator
         private byte[]? _cachedKey = null;
         private VaultData _currentVault = new VaultData();
         private List<GoogleAccount> _cachedAccounts = new List<GoogleAccount>();
+        private bool _offlineMode = false;
+
+        public bool IsOfflineMode => _offlineMode;
 
         public bool IsUnlocked()
         {
@@ -305,6 +313,64 @@ namespace MasterAuthenticator
             catch
             {
                 return false;
+            }
+        }
+
+        // ----------------------------------------------------
+        // App settings (sync mode)
+        // ----------------------------------------------------
+        private static string GetSettingsPath()
+        {
+            return Path.Combine(GetLocalVaultDirectory(), "settings.json");
+        }
+
+        public bool IsFirstRun()
+        {
+            // אין קובץ הגדרות כלל = הפעלה ראשונה (או שאשף ההגדרה טרם הושלם)
+            return !File.Exists(GetSettingsPath());
+        }
+
+        public void LoadAppSettings()
+        {
+            try
+            {
+                string path = GetSettingsPath();
+                if (!File.Exists(path)) return;
+                var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path));
+                _offlineMode = settings != null && settings.OfflineMode;
+            }
+            catch
+            {
+                // Corrupt settings must never prevent the app from running.
+                _offlineMode = false;
+            }
+        }
+
+        public void SetOfflineMode(bool offline)
+        {
+            _offlineMode = offline;
+            try
+            {
+                string path = GetSettingsPath();
+                Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+                File.WriteAllText(path, JsonSerializer.Serialize(new AppSettings { OfflineMode = offline }));
+            }
+            catch
+            {
+                // Persisting the preference is best-effort; the in-memory value still applies.
+            }
+        }
+
+        public void DeleteLocalVault(string email)
+        {
+            try
+            {
+                string path = GetLocalVaultPath(email);
+                if (File.Exists(path)) File.Delete(path);
+            }
+            catch
+            {
+                // Cleanup failures are non-critical.
             }
         }
 

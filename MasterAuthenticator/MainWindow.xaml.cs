@@ -40,6 +40,7 @@ namespace MasterAuthenticator
         private bool _backupCodesExpanded = false;
         private string _currentPasswordHash = "";
         private string _currentServerUpdatedAt = "";
+        private bool _setupOfflineChoice = false; // בחירת המשתמש באשף ההפעלה הראשונה
 
         // כתובת שרת הגיבוי החדש (Cloudflare Worker) - החלף את YOUR_WORKERS_SUBDOMAIN בסאבדומיין שקיבלת מ-Cloudflare
         private const string DeveloperScriptUrl = "https://master-auth-backup.mytovmail.workers.dev";
@@ -73,17 +74,38 @@ namespace MasterAuthenticator
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            ShowScreen("Lock");
-            LockEmail.Focus();
+            _security.LoadAppSettings();
+            UpdateLockScreenForMode();
+
+            if (_security.IsFirstRun())
+            {
+                // הפעלה ראשונה — אשף בחירת מצב הסנכרון לפני מסך הנעילה
+                SelectSetupOption(false);
+                ShowScreen("Setup");
+            }
+            else
+            {
+                ShowScreen("Lock");
+                LockEmail.Focus();
+            }
+
             UpdateSyncBadgeStatus();
         }
 
         private async void NetworkAvailabilityChanged(object? sender, NetworkAvailabilityEventArgs e)
         {
-            if (e.IsAvailable && _security.IsUnlocked() && _security.HasPendingLocalSync(_security.GetRecoveryEmail()))
+            if (e.IsAvailable && !_security.IsOfflineMode && _security.IsUnlocked() && _security.HasPendingLocalSync(_security.GetRecoveryEmail()))
             {
                 await SyncVaultToCloudAsync();
             }
+        }
+
+        private void UpdateLockScreenForMode()
+        {
+            bool offline = _security.IsOfflineMode;
+            LockIcon.Text = offline ? "📴" : "☁️";
+            LockTitleText.Text = offline ? "מצב אופליין" : "חיבור מאובטח לענן";
+            LockModeHint.Visibility = offline ? Visibility.Visible : Visibility.Collapsed;
         }
 
         // ----------------------------------------------------
@@ -91,8 +113,42 @@ namespace MasterAuthenticator
         // ----------------------------------------------------
         private void ShowScreen(string screenName)
         {
+            SetupScreen.Visibility = screenName == "Setup" ? Visibility.Visible : Visibility.Collapsed;
             LockScreen.Visibility = screenName == "Lock" ? Visibility.Visible : Visibility.Collapsed;
             DashboardScreen.Visibility = screenName == "Dashboard" ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // ----------------------------------------------------
+        // First-Run Setup Screen (sync mode choice)
+        // ----------------------------------------------------
+        private void SelectSetupOption(bool offline)
+        {
+            _setupOfflineChoice = offline;
+
+            SyncOptionCard.BorderBrush = offline ? new SolidColorBrush(Color.FromArgb(21, 255, 255, 255)) : new SolidColorBrush(Color.FromRgb(139, 92, 246));
+            SyncOptionCard.BorderThickness = offline ? new Thickness(1.5) : new Thickness(2);
+            SyncOptionCheck.Visibility = offline ? Visibility.Collapsed : Visibility.Visible;
+
+            OfflineOptionCard.BorderBrush = offline ? new SolidColorBrush(Color.FromRgb(139, 92, 246)) : new SolidColorBrush(Color.FromArgb(21, 255, 255, 255));
+            OfflineOptionCard.BorderThickness = offline ? new Thickness(2) : new Thickness(1.5);
+            OfflineOptionCheck.Visibility = offline ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void SyncOptionCard_Click(object sender, MouseButtonEventArgs e) => SelectSetupOption(false);
+
+        private void OfflineOptionCard_Click(object sender, MouseButtonEventArgs e) => SelectSetupOption(true);
+
+        private void SetupContinue_Click(object sender, RoutedEventArgs e)
+        {
+            // שמירת ההעדפה סוגרת את אשף ההפעלה הראשונה (נוצר קובץ settings.json)
+            _security.SetOfflineMode(_setupOfflineChoice);
+            UpdateLockScreenForMode();
+            ShowScreen("Lock");
+            LockEmail.Focus();
+            UpdateSyncBadgeStatus();
+            ShowToast(_setupOfflineChoice
+                ? "מצב אופליין נבחר — הנתונים יישארו במחשב זה בלבד. 📴"
+                : "מצב סנכרון נבחר — ניתן להתחבר לשרת הגיבוי. ☁️", false);
         }
 
         private void SwitchTab(string tabName)
@@ -155,6 +211,12 @@ namespace MasterAuthenticator
             if (password.Length < 4)
             {
                 ShowToast("הסיסמה חייבת להיות באורך 4 תווים לפחות!", true);
+                return;
+            }
+
+            if (_security.IsOfflineMode)
+            {
+                await UnlockOfflineAsync(email, password);
                 return;
             }
 
@@ -296,8 +358,55 @@ namespace MasterAuthenticator
             }
         }
 
+        private async Task UnlockOfflineAsync(string email, string password)
+        {
+            if (_security.TryLoadLocalVault(email, password, out bool pendingSync, out string serverUpdatedAt))
+            {
+                _currentPasswordHash = HashPassword(password);
+                _currentServerUpdatedAt = serverUpdatedAt;
+                ShowToast("הכספת המקומית נפתחה במצב אופליין. הנתונים נשמרים במחשב זה בלבד.", false);
+                LockPassword.Password = "";
+                ShowScreen("Dashboard");
+                SwitchTab("accounts");
+                UpdateSyncBadgeStatus();
+                return;
+            }
+
+            // אין כספת מקומית לאימייל זה — מציע ליצור כספת מקומית חדשה (ללא שום קשר לשרת)
+            bool createLocal = ShowCustomDialog(
+                "יצירת כספת מקומית",
+                $"לא נמצאה כספת מקומית עבור {email} במחשב זה.\n\nבמצב אופליין הכספת נשמרת אך ורק במחשב זה ואינה מסונכרנת לשום שרת.\n\nהאם ליצור כספת מקומית חדשה?",
+                true,
+                "📴");
+            if (!createLocal) return;
+
+            string confirmPassword = AskUserPasswordCustomDialog("אימות סיסמה מחדש", "אנא הקלד שוב את סיסמת המאסטר שקבעת לצורך אימות:", "צור כספת 🔑");
+            if (string.IsNullOrEmpty(confirmPassword)) return;
+
+            if (password != confirmPassword)
+            {
+                ShowToast("הסיסמאות אינן תואמות! תהליך יצירת הכספת בוטל.", true);
+                return;
+            }
+
+            _security.InitializeNewVault(password, email);
+            _currentPasswordHash = HashPassword(password);
+            _security.SaveLocalVault(email, "", false);
+            ShowToast("כספת מקומית חדשה נוצרה בהצלחה! 📴", false);
+            LockPassword.Password = "";
+            ShowScreen("Dashboard");
+            SwitchTab("accounts");
+            UpdateSyncBadgeStatus();
+        }
+
         private async void RequestRecovery_Click(object sender, RoutedEventArgs e)
         {
+            if (_security.IsOfflineMode)
+            {
+                ShowCustomDialog("מצב אופליין", "שליחת קישור שחזור במייל אינה זמינה במצב אופליין, מכיוון שהתוכנה אינה מתקשרת עם השרת.\n\nמומלץ לייצא גיבוי מוצפן מההגדרות כדי לא לאבד את הגישה לכספת.", false, "📴");
+                return;
+            }
+
             string email = LockEmail.Text.Trim().ToLowerInvariant();
             if (string.IsNullOrEmpty(email) || !email.Contains("@"))
             {
@@ -801,6 +910,61 @@ namespace MasterAuthenticator
             SettingsEmail.Text = _security.GetRecoveryEmail();
             OldPassword.Password = "";
             NewPassword.Password = "";
+            SyncModeRadio.IsChecked = !_security.IsOfflineMode;
+            OfflineModeRadio.IsChecked = _security.IsOfflineMode;
+        }
+
+        private void SyncModeRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            if (SyncModeRadio.IsChecked == true)
+            {
+                SetSyncMode(false);
+            }
+        }
+
+        private void OfflineModeRadio_Checked(object sender, RoutedEventArgs e)
+        {
+            if (OfflineModeRadio.IsChecked == true)
+            {
+                SetSyncMode(true);
+            }
+        }
+
+        private void SetSyncMode(bool offline)
+        {
+            if (_security.IsOfflineMode == offline) return;
+
+            if (offline)
+            {
+                bool confirm = ShowCustomDialog(
+                    "מעבר למצב אופליין מלא",
+                    "במצב אופליין התוכנה לא תיצור שום קשר עם השרת:\n\n" +
+                    "• הכספת תישמר במחשב זה בלבד\n" +
+                    "• לא יתבצע גיבוי בענן\n" +
+                    "• שחזור סיסמה במייל לא יהיה זמין\n\n" +
+                    "להמשיך?",
+                    true,
+                    "📴");
+                if (!confirm)
+                {
+                    // ביטול — מחזיר את הבחירה למצב הקודם
+                    SyncModeRadio.IsChecked = true;
+                    return;
+                }
+            }
+
+            _security.SetOfflineMode(offline);
+            UpdateLockScreenForMode();
+            UpdateSyncBadgeStatus();
+            ShowToast(offline
+                ? "מצב אופליין הופעל — הנתונים נשמרים במחשב זה בלבד."
+                : "מצב סנכרון הופעל — התוכנה תסנכרן שוב עם השרת.", false);
+
+            // בחזרה למצב מסונכרן — נסה להעלות שינויים מקומיים שהמתינו
+            if (!offline && _security.IsUnlocked())
+            {
+                _ = SyncVaultToCloudAsync();
+            }
         }
 
         private async void SaveSettingsEmail_Click(object sender, RoutedEventArgs e)
@@ -819,7 +983,10 @@ namespace MasterAuthenticator
                 return;
             }
 
-            var confirm = MessageBox.Show($"האם ברצונך להעביר את הכספת לכתובת האימייל החדשה: {newEmail}?\n\nהכספת תישמר בענן תחת האימייל החדש.",
+            string whereSaved = _security.IsOfflineMode
+                ? "הכספת תישמר מקומית תחת האימייל החדש."
+                : "הכספת תישמר בענן תחת האימייל החדש.";
+            var confirm = MessageBox.Show($"האם ברצונך להעביר את הכספת לכתובת האימייל החדשה: {newEmail}?\n\n{whereSaved}",
                                           "שינוי אימייל כספת",
                                           MessageBoxButton.YesNo,
                                           MessageBoxImage.Question,
@@ -832,6 +999,8 @@ namespace MasterAuthenticator
                 bool success = await SyncVaultToCloudAsync();
                 if (success)
                 {
+                    // מסיר את מטמון הכספת המקומית של האימייל הישן כדי שלא תישאר גישה דרך כתובת ישנה
+                    _security.DeleteLocalVault(oldEmail);
                     ShowToast("הכספת הועברה בהצלחה לאימייל החדש!", false);
                 }
                 else
@@ -977,6 +1146,16 @@ namespace MasterAuthenticator
         // ----------------------------------------------------
         private async Task<bool> SyncVaultToCloudAsync()
         {
+            // במצב אופליין אין שום קשר עם השרת — הכספת נשמרת מקומית בלבד
+            if (_security.IsOfflineMode)
+            {
+                string offlineEmail = _security.GetRecoveryEmail();
+                if (string.IsNullOrEmpty(offlineEmail)) return false;
+                _security.SaveLocalVault(offlineEmail, _currentServerUpdatedAt, false);
+                UpdateSyncBadgeStatus();
+                return true;
+            }
+
             if (DeveloperScriptUrl.Contains("YOUR_WORKERS_SUBDOMAIN"))
                 return false;
 
@@ -1046,7 +1225,14 @@ namespace MasterAuthenticator
         private void UpdateSyncBadgeStatus()
         {
             string email = _security.GetRecoveryEmail();
-            if (_security.IsUnlocked() && _security.HasPendingLocalSync(email))
+            if (_security.IsOfflineMode && _security.IsUnlocked())
+            {
+                SyncBadge.Background = new SolidColorBrush(Color.FromArgb(21, 139, 92, 246));
+                SyncBadge.BorderBrush = new SolidColorBrush(Color.FromArgb(32, 139, 92, 246));
+                SyncBadgeText.Text = "מצב אופליין — נתונים מקומיים בלבד 📴";
+                SyncBadgeText.Foreground = new SolidColorBrush(Color.FromRgb(139, 92, 246));
+            }
+            else if (_security.IsUnlocked() && _security.HasPendingLocalSync(email))
             {
                 SyncBadge.Background = new SolidColorBrush(Color.FromArgb(21, 245, 158, 11));
                 SyncBadge.BorderBrush = new SolidColorBrush(Color.FromArgb(32, 245, 158, 11));
