@@ -1913,7 +1913,104 @@
     let currentVault = null; // אובייקט הכספת הפעיל שנטען מהענן
     let currentEmail = ""; // אימייל המשתמש המחובר כעת
     let currentPasswordHash = ""; // האש סיסמת המאסטר לביצוע פעולות כתיבה מול השרת
+    let currentServerUpdatedAt = ""; // חותמת הגרסה האחרונה שאושרה בענן
+    let localSyncPending = false; // יש שינויים מקומיים שטרם עלו לענן
+    let offlineSession = false; // הסשן נפתח מהמטמון המקומי
     let currentTab = 'accounts'; // הכרטיסייה הנוכחית בלוח הבקרה
+    const LOCAL_VAULT_CACHE_PREFIX = "master_auth_vault_cache_v1:";
+
+    function localVaultCacheKey(email) {
+      return LOCAL_VAULT_CACHE_PREFIX + encodeURIComponent(email.trim().toLowerCase());
+    }
+
+    function readLocalVaultCache(email) {
+      try {
+        const raw = localStorage.getItem(localVaultCacheKey(email));
+        if (!raw) return null;
+        const cached = JSON.parse(raw);
+        if (!cached || !cached.vault || cached.email !== email.trim().toLowerCase()) return null;
+        return cached;
+      } catch (err) {
+        return null;
+      }
+    }
+
+    function writeLocalVaultCache(pending = localSyncPending) {
+      if (!currentEmail || !currentVault) return;
+      try {
+        localStorage.setItem(localVaultCacheKey(currentEmail), JSON.stringify({
+          version: 1,
+          email: currentEmail,
+          vault: currentVault,
+          serverUpdatedAt: currentServerUpdatedAt || "",
+          pendingSync: Boolean(pending),
+          savedAt: new Date().toISOString()
+        }));
+      } catch (err) {
+        showToast("לא ניתן לשמור מטמון מקומי מוצפן: " + err.message, "warning");
+      }
+    }
+
+    async function unlockFromLocalVaultCache(cached, password, email) {
+      try {
+        const vault = cached.vault;
+        const salt = new Uint8Array(atob(vault.Salt).split("").map(c => c.charCodeAt(0)));
+        const key = await deriveKey(password, salt);
+        const tokenDecrypted = await decryptText(
+          vault.VerificationTokenEncrypted,
+          vault.VerificationTokenIv,
+          vault.VerificationTokenTag,
+          key
+        );
+        if (tokenDecrypted !== "AUTHENTICATED") return false;
+
+        const accountsJson = await decryptText(
+          vault.AccountsEncrypted,
+          vault.AccountsIv,
+          vault.AccountsTag,
+          key
+        );
+
+        sessionKey = key;
+        currentVault = vault;
+        currentEmail = email;
+        currentPasswordHash = await sha256(password);
+        currentServerUpdatedAt = cached.serverUpdatedAt || "";
+        localSyncPending = Boolean(cached.pendingSync);
+        offlineSession = true;
+        accounts = JSON.parse(accountsJson);
+
+        showToast(
+          localSyncPending
+            ? "הכספת נפתחה מקומית. יש שינויים שממתינים לסנכרון."
+            : "הכספת נפתחה מהמטמון המקומי."
+          , "info"
+        );
+        showScreen("dashboardScreen");
+        initDashboard();
+        if (localSyncPending && navigator.onLine) {
+          setTimeout(() => syncVaultToCloud(), 0);
+        }
+        return true;
+      } catch (err) {
+        return false;
+      }
+    }
+
+    function updateOfflineStatus() {
+      updateSyncBadgeStatus();
+    }
+
+    window.addEventListener("online", () => {
+      offlineSession = false;
+      updateOfflineStatus();
+      if (currentVault && localSyncPending) syncVaultToCloud();
+    });
+
+    window.addEventListener("offline", () => {
+      offlineSession = true;
+      updateOfflineStatus();
+    });
     let totpInterval = null; // מזהה טיימר הרענון של ה-TOTP
     let countdownInterval = null; // מזהה טיימר רענון מונה השניות
     let backupCodesExpanded = false; // מצב פתיחת אזור קודי הגיבוי במודל
@@ -2317,6 +2414,7 @@
       e.preventDefault();
       const email = document.getElementById("lockEmail").value.trim().toLowerCase();
       const password = document.getElementById("lockPassword").value;
+      const localCache = readLocalVaultCache(email);
       
       if (!email || !email.includes("@")) {
         showToast("אנא הזן כתובת אימייל תקינה!", "error");
@@ -2329,7 +2427,11 @@
       }
       
       if (!isBackendConfigured()) {
-        showToast("שרת הגיבוי טרם הוגדר על ידי המפתח. לא ניתן להתחבר לענן.", "error");
+        if (localCache && localCache.vault) {
+          const unlockedLocally = await unlockFromLocalVaultCache(localCache, password, email);
+          if (unlockedLocally) return;
+        }
+        showToast("שרת הגיבוי טרם הוגדר ואין כספת מקומית זמינה.", "error");
         return;
       }
       
@@ -2359,7 +2461,8 @@
             return;
           }
           
-          const vault = JSON.parse(result.vault);
+          const cachedIsPreferred = localCache && localCache.pendingSync && localCache.vault;
+          const vault = cachedIsPreferred ? localCache.vault : JSON.parse(result.vault);
           const salt = new Uint8Array(atob(vault.Salt).split("").map(c => c.charCodeAt(0)));
           const key = await deriveKey(password, salt);
           
@@ -2376,6 +2479,10 @@
               currentVault = vault;
               currentEmail = email;
               currentPasswordHash = await sha256(password);
+              currentServerUpdatedAt = cachedIsPreferred ? (localCache.serverUpdatedAt || "") : (result.updatedAt || "");
+              localSyncPending = Boolean(cachedIsPreferred);
+              offlineSession = false;
+              writeLocalVaultCache(localSyncPending);
               
               // פענוח החשבונות
               const accountsJson = await decryptText(
@@ -2386,9 +2493,17 @@
               );
               accounts = JSON.parse(accountsJson);
               
-              showToast("ברוך הבא! נעילת המאמת נפתחה בהצלחה.", "success");
+              showToast(
+                cachedIsPreferred
+                  ? "נפתח עותק מקומי עם שינויים שממתינים לסנכרון."
+                  : "ברוך הבא! נעילת המאמת נפתחה בהצלחה.",
+                cachedIsPreferred ? "info" : "success"
+              );
               showScreen("dashboardScreen");
               initDashboard();
+              if (localSyncPending && navigator.onLine) {
+                setTimeout(() => syncVaultToCloud(), 0);
+              }
             } else {
               showToast("סיסמת המאסטר שגויה. נסה שנית!", "error");
             }
@@ -2417,9 +2532,7 @@
             
             const saveResp = await fetch(DEVELOPER_SCRIPT_URL, {
               method: "POST",
-              headers: {
-                "Content-Type": "text/plain;charset=utf-8"
-              },
+              headers: backendHeaders(),
               body: JSON.stringify({
                 action: "save_vault",
                 email: email,
@@ -2434,7 +2547,11 @@
               currentVault = newVault;
               currentEmail = email;
               currentPasswordHash = pHash;
+              currentServerUpdatedAt = saveRes.updatedAt || "";
+              localSyncPending = false;
+              offlineSession = false;
               accounts = [];
+              writeLocalVaultCache(false);
               
               showToast("חשבון ענן חדש נוצר וסונכרן בהצלחה!", "success");
               showScreen("dashboardScreen");
@@ -2445,7 +2562,13 @@
           }
         }
       } catch (err) {
-        showToast("שגיאת תקשורת: " + err.message, "error");
+        if (localCache && localCache.vault) {
+          const unlockedLocally = await unlockFromLocalVaultCache(localCache, password, email);
+          if (unlockedLocally) return;
+          showToast("סיסמת המאסטר אינה מתאימה לכספת המקומית.", "error");
+        } else {
+          showToast("אין חיבור לשרת ואין כספת מקומית שמורה עבור המשתמש הזה.", "error");
+        }
       }
     }
 
@@ -2462,6 +2585,9 @@
       currentVault = null;
       currentEmail = "";
       currentPasswordHash = "";
+      currentServerUpdatedAt = "";
+      localSyncPending = false;
+      offlineSession = false;
       document.getElementById("lockPassword").value = "";
       if (totpInterval) clearInterval(totpInterval);
       if (countdownInterval) clearInterval(countdownInterval);
@@ -2493,8 +2619,18 @@
 
     // סנכרון בפועל
     async function syncVaultToCloud() {
-      if (!currentVault || !currentEmail) return;
-      if (!isBackendConfigured()) return;
+      if (!currentVault || !currentEmail) return false;
+
+      // קודם כל שומרים את הכספת המוצפנת מקומית, גם ללא אינטרנט.
+      localSyncPending = true;
+      writeLocalVaultCache(true);
+      updateSyncBadgeStatus();
+
+      if (!isBackendConfigured() || !navigator.onLine) {
+        showToast("השינויים נשמרו מקומית ויועלו לענן כשהחיבור יחזור.", "info");
+        return false;
+      }
+
       try {
         const response = await fetch(DEVELOPER_SCRIPT_URL, {
           method: "POST",
@@ -2508,13 +2644,21 @@
         });
         const result = await response.json();
         if (result && result.success) {
+          currentServerUpdatedAt = result.updatedAt || new Date().toISOString();
+          localSyncPending = false;
+          offlineSession = false;
+          writeLocalVaultCache(false);
           showToast("השינויים סונכרנו בהצלחה בענן! ☁️", "success");
-        } else {
-          showToast(result && result.message ? result.message : "שגיאה בסנכרון השינויים לענן!", "error");
+          updateSyncBadgeStatus();
+          return true;
         }
+
+        showToast(result && result.message ? result.message : "שגיאה בסנכרון השינויים לענן!", "error");
       } catch (e) {
-        showToast("שגיאת סנכרון לענן: " + e.message, "error");
+        showToast("השינויים נשמרו מקומית; הסנכרון ינסה שוב כשהחיבור יחזור.", "info");
       }
+      updateSyncBadgeStatus();
+      return false;
     }
 
     // עדכון תג החיבור בראש הדף
@@ -2522,7 +2666,13 @@
       const badge = document.getElementById("syncStatus");
       const text = document.getElementById("syncStatusText");
       
-      if (sessionKey && currentVault) {
+      if (sessionKey && currentVault && localSyncPending) {
+        badge.classList.add("disconnected");
+        text.innerText = "נשמר מקומית — ממתין לסנכרון ⏳";
+      } else if (sessionKey && currentVault && offlineSession) {
+        badge.classList.add("disconnected");
+        text.innerText = "מצב אופליין — הכספת מקומית בלבד 📴";
+      } else if (sessionKey && currentVault) {
         badge.classList.remove("disconnected");
         text.innerText = "מחובר ומסונכרן לענן ☁️";
       } else {
