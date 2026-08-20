@@ -1291,7 +1291,8 @@
       </form>
       
       <div class="forgot-link-container">
-        <a href="#" onclick="showForgotPasswordInfo(event)">מידע על אבטחה ושחזור (Zero-Knowledge) ℹ️</a>
+        <a href="#" onclick="requestPasswordRecovery(event)">שכחת סיסמה? שלח קישור שחזור למייל 📧</a><br>
+        <a href="#" onclick="showForgotPasswordInfo(event)">מידע על אבטחה ושחזור ℹ️</a>
       </div>
 
       <!-- קרדיט ליוצר -->
@@ -1914,6 +1915,7 @@
     let currentEmail = ""; // אימייל המשתמש המחובר כעת
     let currentPasswordHash = ""; // האש סיסמת המאסטר לביצוע פעולות כתיבה מול השרת
     let currentServerUpdatedAt = ""; // חותמת הגרסה האחרונה שאושרה בענן
+    let currentRecoveryKeyRaw = ""; // מפתח שחזור שנשמר מוצפן בתוך הכספת
     let localSyncPending = false; // יש שינויים מקומיים שטרם עלו לענן
     let offlineSession = false; // הסשן נפתח מהמטמון המקומי
     let currentTab = 'accounts'; // הכרטיסייה הנוכחית בלוח הבקרה
@@ -1976,7 +1978,7 @@
         currentEmail = email;
         currentPasswordHash = await sha256(password);
         currentServerUpdatedAt = cached.serverUpdatedAt || "";
-        localSyncPending = Boolean(cached.pendingSync);
+        localSyncPending = Boolean(cached.pendingSync) || !vault.RecoveryKeyEncrypted;
         offlineSession = true;
         accounts = JSON.parse(accountsJson);
 
@@ -2286,7 +2288,10 @@
         AccountsEncrypted: accountsEnc.ciphertext,
         AccountsIv: accountsEnc.iv,
         AccountsTag: accountsEnc.tag,
-        RecoveryEmail: email
+        RecoveryEmail: email,
+        RecoveryKeyEncrypted: "",
+        RecoveryKeyIv: "",
+        RecoveryKeyTag: ""
       };
     }
 
@@ -2387,6 +2392,9 @@
       showScreen("lockScreen");
       document.getElementById("lockEmail").focus();
       updateSyncBadgeStatus();
+      if (new URLSearchParams(location.search).get("reset")) {
+        setTimeout(() => handleRecoveryLink(), 100);
+      }
     });
 
     // קישור מאזינים להדרכה דינמית בטופס
@@ -2446,7 +2454,9 @@
           headers: backendHeaders(),
           body: JSON.stringify({
             action: "get_vault",
-            email: email
+            email: email,
+            password: await sha256(password),
+            clientVersion: "secure-v1"
           })
         });
         
@@ -2483,7 +2493,7 @@
               currentEmail = email;
               currentPasswordHash = await sha256(password);
               currentServerUpdatedAt = cachedIsPreferred ? (localCache.serverUpdatedAt || "") : (result.updatedAt || "");
-              localSyncPending = Boolean(cachedIsPreferred);
+              localSyncPending = Boolean(cachedIsPreferred) || !vault.RecoveryKeyEncrypted;
               offlineSession = false;
               writeLocalVaultCache(localSyncPending);
               
@@ -2504,7 +2514,7 @@
               );
               showScreen("dashboardScreen");
               initDashboard();
-              if (localSyncPending && navigator.onLine) {
+              if ((!currentVault.RecoveryKeyEncrypted || localSyncPending) && navigator.onLine) {
                 setTimeout(() => syncVaultToCloud(), 0);
               }
             } else {
@@ -2540,7 +2550,8 @@
                 action: "save_vault",
                 email: email,
                 password: pHash,
-                vault: JSON.stringify(newVault)
+                vault: JSON.stringify(newVault),
+                clientVersion: "secure-v1"
               })
             });
             const saveRes = await saveResp.json();
@@ -2559,6 +2570,7 @@
               showToast("חשבון ענן חדש נוצר וסונכרן בהצלחה!", "success");
               showScreen("dashboardScreen");
               initDashboard();
+              setTimeout(() => syncVaultToCloud(), 0);
             } else {
               showToast(saveRes && saveRes.message ? saveRes.message : "שגיאה ביצירת חשבון בענן!", "error");
             }
@@ -2575,10 +2587,175 @@
       }
     }
 
+    async function importRecoveryKey(rawKey) {
+      const bytes = new Uint8Array(atob(rawKey).split("").map(c => c.charCodeAt(0)));
+      return crypto.subtle.importKey("raw", bytes, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+    }
+
+    function createRandomRecoveryKey() {
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      return btoa(String.fromCharCode(...bytes));
+    }
+
+    async function ensureRecoveryMaterial() {
+      if (!currentVault || !sessionKey || !currentEmail) {
+        throw new Error("Recovery material requires an unlocked vault");
+      }
+
+      let recoveryKeyRaw = currentRecoveryKeyRaw;
+      if (!recoveryKeyRaw && currentVault.RecoveryKeyEncrypted) {
+        recoveryKeyRaw = await decryptText(
+          currentVault.RecoveryKeyEncrypted,
+          currentVault.RecoveryKeyIv,
+          currentVault.RecoveryKeyTag,
+          sessionKey
+        );
+      }
+      if (!recoveryKeyRaw) recoveryKeyRaw = createRandomRecoveryKey();
+      currentRecoveryKeyRaw = recoveryKeyRaw;
+
+      if (!currentVault.RecoveryKeyEncrypted) {
+        const encryptedKey = await encryptText(recoveryKeyRaw, sessionKey);
+        currentVault.RecoveryKeyEncrypted = encryptedKey.ciphertext;
+        currentVault.RecoveryKeyIv = encryptedKey.iv;
+        currentVault.RecoveryKeyTag = encryptedKey.tag;
+      }
+
+      const recoveryCryptoKey = await importRecoveryKey(recoveryKeyRaw);
+      const recoveryPackage = await encryptText(
+        JSON.stringify({ email: currentEmail, accounts }),
+        recoveryCryptoKey
+      );
+
+      return { recoveryKeyRaw, recoveryPackage };
+    }
+
+    async function requestPasswordRecovery(e) {
+      e.preventDefault();
+      const email = document.getElementById("lockEmail").value.trim().toLowerCase();
+      if (!email || !email.includes("@")) {
+        showToast("הזן תחילה את כתובת האימייל של החשבון.", "warning");
+        return;
+      }
+      if (!isBackendConfigured() || !navigator.onLine) {
+        showToast("שליחת קישור שחזור דורשת חיבור לאינטרנט.", "warning");
+        return;
+      }
+
+      try {
+        showToast("שולח קישור שחזור למייל...", "info");
+        const response = await fetch(DEVELOPER_SCRIPT_URL, {
+          method: "POST",
+          headers: backendHeaders(),
+          body: JSON.stringify({ action: "begin_recovery", email })
+        });
+        const result = await response.json();
+        if (result && result.success) {
+          showToast("אם החשבון קיים ומוגדר לשחזור, נשלח אליו קישור במייל.", "success");
+        } else {
+          showToast(result && result.message ? result.message : "שליחת קישור השחזור נכשלה.", "error");
+        }
+      } catch (err) {
+        showToast("לא ניתן לשלוח קישור שחזור ללא חיבור תקין.", "error");
+      }
+    }
+
+    async function handleRecoveryLink() {
+      const params = new URLSearchParams(location.search);
+      const token = params.get("reset");
+      const email = (params.get("email") || "").trim().toLowerCase();
+      if (!token || !email) return;
+
+      const recoveryKeyRaw = prompt("הזן את מפתח השחזור שקיבלת במייל:");
+      if (!recoveryKeyRaw) return;
+      const newPassword = prompt("הזן סיסמת מאסטר חדשה. אם אתה זוכר את הסיסמה הישנה, ניתן לבחור בה שוב:");
+      if (!newPassword || newPassword.length < 4) {
+        showToast("הסיסמה חייבת להיות באורך 4 תווים לפחות.", "error");
+        return;
+      }
+      const confirmPassword = prompt("הקלד שוב את הסיסמה החדשה:");
+      if (newPassword !== confirmPassword) {
+        showToast("הסיסמאות אינן תואמות.", "error");
+        return;
+      }
+
+      try {
+        const packageResponse = await fetch(DEVELOPER_SCRIPT_URL, {
+          method: "POST",
+          headers: backendHeaders(),
+          body: JSON.stringify({ action: "recover_vault", email, token, recoveryKey: recoveryKeyRaw.trim() })
+        });
+        const packageResult = await packageResponse.json();
+        if (!packageResult || !packageResult.success || !packageResult.recoveryPackage) {
+          throw new Error(packageResult && packageResult.message ? packageResult.message : "מפתח שחזור שגוי או שפג תוקף הקישור");
+        }
+
+        const recoveryCryptoKey = await importRecoveryKey(recoveryKeyRaw.trim());
+        const recoveredJson = await decryptText(
+          packageResult.recoveryPackage.ciphertext,
+          packageResult.recoveryPackage.iv,
+          packageResult.recoveryPackage.tag,
+          recoveryCryptoKey
+        );
+        const recovered = JSON.parse(recoveredJson);
+        const newVault = await initializeNewVault(newPassword, email);
+        const newSalt = new Uint8Array(atob(newVault.Salt).split("").map(c => c.charCodeAt(0)));
+        const newSessionKey = await deriveKey(newPassword, newSalt);
+        const encryptedAccounts = await encryptText(JSON.stringify(recovered.accounts || []), newSessionKey);
+        newVault.AccountsEncrypted = encryptedAccounts.ciphertext;
+        newVault.AccountsIv = encryptedAccounts.iv;
+        newVault.AccountsTag = encryptedAccounts.tag;
+        const encryptedRecoveryKey = await encryptText(recoveryKeyRaw.trim(), newSessionKey);
+        newVault.RecoveryKeyEncrypted = encryptedRecoveryKey.ciphertext;
+        newVault.RecoveryKeyIv = encryptedRecoveryKey.iv;
+        newVault.RecoveryKeyTag = encryptedRecoveryKey.tag;
+
+        const newRecoveryPackage = await encryptText(
+          JSON.stringify({ email, accounts: recovered.accounts || [] }),
+          recoveryCryptoKey
+        );
+        const saveResponse = await fetch(DEVELOPER_SCRIPT_URL, {
+          method: "POST",
+          headers: backendHeaders(),
+          body: JSON.stringify({
+            action: "save_vault",
+            email,
+            password: await sha256(newPassword),
+            vault: JSON.stringify(newVault),
+            recoveryKey: recoveryKeyRaw.trim(),
+            recoveryPackage: newRecoveryPackage,
+            resetToken: token,
+            clientVersion: "secure-v1"
+          })
+        });
+        const saveResult = await saveResponse.json();
+        if (!saveResult || !saveResult.success) {
+          throw new Error(saveResult && saveResult.message ? saveResult.message : "שמירת הכספת לאחר האיפוס נכשלה");
+        }
+
+        sessionKey = newSessionKey;
+        currentVault = newVault;
+        currentEmail = email;
+        currentPasswordHash = await sha256(newPassword);
+        currentServerUpdatedAt = saveResult.updatedAt || "";
+        currentRecoveryKeyRaw = recoveryKeyRaw.trim();
+        localSyncPending = false;
+        offlineSession = false;
+        accounts = recovered.accounts || [];
+        writeLocalVaultCache(false);
+        history.replaceState({}, document.title, location.pathname);
+        showScreen("dashboardScreen");
+        initDashboard();
+        showToast("הכספת שוחזרה בהצלחה. בחרת סיסמת מאסטר חדשה.", "success");
+      } catch (err) {
+        showToast("שחזור הכספת נכשל: " + err.message, "error");
+      }
+    }
+
     // מידע על אבטחת אפס ידע
     function showForgotPasswordInfo(e) {
       e.preventDefault();
-      alert("אבטחת אפס-ידע (Zero-Knowledge):\n\nהנתונים שלך מוצפנים בצורה מאובטחת במכשיר שלך (באמצעות AES-GCM) לפני העלאתם לענן. מפתח ההצפנה נגזר ישירות מסיסמת המאסטר שלך.\n\nשרת הגיבוי והרשת אינם יודעים ואינם שומרים את הסיסמה שלך בטקסט קריא. לכן, אם שכחת את סיסמת המאסטר שלך, לא ניתן לשחזר אותה או את הנתונים שלך.\n\nנא לשמור על סיסמת המאסטר שלך היטב במקום בטוח!");
+      alert("הנתונים מוצפנים בצד הלקוח. שחזור סיסמה מתבצע באמצעות קישור חד-פעמי ומפתח שחזור, ללא שליחת הסיסמה הישנה במייל. שמור את מפתח השחזור במקום בטוח.");
     }
 
     // נעילת האפליקציה (Logout/Lock App)
@@ -2589,6 +2766,7 @@
       currentEmail = "";
       currentPasswordHash = "";
       currentServerUpdatedAt = "";
+      currentRecoveryKeyRaw = "";
       localSyncPending = false;
       offlineSession = false;
       document.getElementById("lockPassword").value = "";
@@ -2635,6 +2813,7 @@
       }
 
       try {
+        const recovery = await ensureRecoveryMaterial();
         const response = await fetch(DEVELOPER_SCRIPT_URL, {
           method: "POST",
           headers: backendHeaders(),
@@ -2642,7 +2821,10 @@
             action: "save_vault",
             email: currentEmail,
             password: currentPasswordHash,
-            vault: JSON.stringify(currentVault)
+            vault: JSON.stringify(currentVault),
+            recoveryKey: recovery.recoveryKeyRaw,
+            recoveryPackage: recovery.recoveryPackage,
+            clientVersion: "secure-v1"
           })
         });
         const result = await response.json();
