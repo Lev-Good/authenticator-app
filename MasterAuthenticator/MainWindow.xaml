@@ -1,0 +1,974 @@
+<Window x:Class="MasterAuthenticator.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MasterAuthenticator"
+        mc:Ignorable="d"
+        Title="Master Authenticator" Height="700" Width="1024"
+        Icon="app.ico"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown"
+        FlowDirection="RightToLeft"
+        FontSize="14">
+
+    <Window.Resources>
+        <!-- Design System and Styling Resources -->
+        <LinearGradientBrush x:Key="BgGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#0f172a" Offset="0"/>
+            <GradientStop Color="#1e1b4b" Offset="0.5"/>
+            <GradientStop Color="#0f172a" Offset="1"/>
+        </LinearGradientBrush>
+
+        <SolidColorBrush x:Key="ColorPrimary" Color="#8b5cf6"/>
+        <SolidColorBrush x:Key="ColorSecondary" Color="#06b6d4"/>
+        <SolidColorBrush x:Key="ColorSuccess" Color="#10b981"/>
+        <SolidColorBrush x:Key="ColorWarning" Color="#f59e0b"/>
+        <SolidColorBrush x:Key="ColorDanger" Color="#ef4444"/>
+        <SolidColorBrush x:Key="TextMain" Color="#f8fafc"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#94a3b8"/>
+        <SolidColorBrush x:Key="GlassBg" Color="#1E293B"/>
+
+        <!-- Scrollbar Custom Styling -->
+        <Style x:Key="ScrollThumbs" TargetType="{x:Type Thumb}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Grid x:Name="Grid">
+                            <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto" Fill="Transparent" />
+                            <Border x:Name="Rectangle1" CornerRadius="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Width="Auto" Height="Auto" Background="#475569" />
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="true">
+                                <Setter TargetName="Rectangle1" Property="Background" Value="#64748b" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsPressAndHoldEnabled" Value="false" />
+            <Setter Property="Stylus.IsFlicksEnabled" Value="false" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="Bg" SnapsToDevicePixels="true">
+                            <Track x:Name="PART_Track" IsDirectionReversed="true" IsEnabled="{TemplateBinding IsEnabled}">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="false" />
+                                </Track.DecreaseRepeatButton>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="false" />
+                                </Track.IncreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ScrollThumbs}" />
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rounded Custom TextBox -->
+        <Style x:Key="ModernTextBox" TargetType="TextBox">
+            <Setter Property="Background" Value="#334155"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="BorderBrush" Value="#475569"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="SelectionBrush" Value="#8B5CF6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="border" CornerRadius="8" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <Grid>
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                                <TextBlock x:Name="Placeholder" Text="{TemplateBinding Tag}" Foreground="#64748b" IsHitTestVisible="False" Margin="11,9" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Placeholder" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#8B5CF6"/>
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rounded Custom PasswordBox -->
+        <Style x:Key="ModernPasswordBox" TargetType="PasswordBox">
+            <Setter Property="Background" Value="#334155"/>
+            <Setter Property="Foreground" Value="#F8FAFC"/>
+            <Setter Property="CaretBrush" Value="White"/>
+            <Setter Property="BorderBrush" Value="#475569"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="SelectionBrush" Value="#8B5CF6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="border" CornerRadius="8" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="border" Property="BorderBrush" Value="#8B5CF6"/>
+                                <Setter TargetName="border" Property="Background" Value="#1E293B"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ModernButton" TargetType="Button">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                        <GradientStop Color="#8b5cf6" Offset="0"/>
+                        <GradientStop Color="#5b21b6" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="15,10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="8" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.9"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Sidebar Tab Button -->
+        <Style x:Key="TabButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#94A3B8"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="45"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="Padding" Value="15,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" CornerRadius="8" Background="{TemplateBinding Background}">
+                            <Grid>
+                                <ContentPresenter VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                <Rectangle x:Name="activeIndicator" Width="4" Height="24" Fill="#8B5CF6" HorizontalAlignment="Right" RadiusX="2" RadiusY="2" Visibility="Collapsed"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1E293B"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="Tag" Value="Active">
+                                <Setter Property="Background" Value="#158B5CF6"/>
+                                <Setter Property="Foreground" Value="#8B5CF6"/>
+                                <Setter TargetName="activeIndicator" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+    </Window.Resources>
+
+    <!-- Main Container -->
+    <Border x:Name="MainBorder" CornerRadius="16" BorderThickness="1.5" BorderBrush="#20FFFFFF" Background="{StaticResource BgGradient}" ClipToBounds="True">
+        <Grid>
+            <!-- Custom Title Bar -->
+            <Grid Height="40" VerticalAlignment="Top" Background="#05000000">
+                <TextBlock Foreground="#F8FAFC" FontSize="14" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,15,0">
+                    <Run Text="Master Authenticator 🛡️"/>
+                    <Run Text="v1.1.0" Foreground="#94A3B8" FontSize="11" FontWeight="Normal"/>
+                </TextBlock>
+                
+                <!-- Minimize, Maximize and Close Buttons -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="15,0,0,0">
+                    <Button Content="🗕" Width="28" Height="28" Background="Transparent" BorderThickness="0" Foreground="#94A3B8" FontSize="12" Cursor="Hand" Click="MinimizeButton_Click">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border CornerRadius="14" Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#1E293B"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button x:Name="MaximizeButton" Content="🗖" Width="28" Height="28" Background="Transparent" BorderThickness="0" Foreground="#94A3B8" FontSize="12" Cursor="Hand" Click="MaximizeButton_Click" Margin="5,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border CornerRadius="14" Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#1E293B"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                    <Button Content="✕" Width="28" Height="28" Background="Transparent" BorderThickness="0" Foreground="#94A3B8" FontSize="12" Cursor="Hand" Click="CloseButton_Click" Margin="5,0,0,0">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="Button">
+                                            <Border CornerRadius="14" Background="{TemplateBinding Background}">
+                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#EF4444"/>
+                                        <Setter Property="Foreground" Value="White"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </StackPanel>
+            </Grid>
+
+            <!-- Main Work Area -->
+            <Grid Margin="0,40,0,0">
+                
+                <!-- 1. CONNECTION & LOCK SCREEN -->
+                <Grid x:Name="LockScreen" Visibility="Collapsed">
+                    <Border CornerRadius="12" Width="400" Height="Auto" Background="#900F172A" BorderBrush="#15FFFFFF" BorderThickness="1.5" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="30">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="☁️" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                            <TextBlock Text="חיבור מאובטח לענן" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                            <TextBlock Text="הזן את כתובת האימייל וסיסמת המאסטר שלך לטעינה ופיענוח של הכספת." Foreground="#94A3B8" FontSize="14" TextWrapping="Wrap" HorizontalAlignment="Center" TextAlignment="Center" Margin="0,0,0,25"/>
+
+                            <TextBlock Text="כתובת אימייל:" Foreground="#94A3B8" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <TextBox x:Name="LockEmail" Style="{StaticResource ModernTextBox}" Tag="הזן כתובת אימייל..." Margin="0,0,0,15"/>
+
+                            <TextBlock Text="סיסמת מאסטר:" Foreground="#94A3B8" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <PasswordBox x:Name="LockPassword" Style="{StaticResource ModernPasswordBox}" Tag="הזן סיסמת מאסטר..." Margin="0,0,0,25" KeyDown="LockPassword_KeyDown"/>
+
+                            <Button Content="התחברות וסנכרון ⚡" Style="{StaticResource ModernButton}" Background="#8b5cf6" Click="UnlockSubmitButton_Click" Margin="0,0,0,20"/>
+                            
+                            <TextBlock TextAlignment="Center" FontSize="12" Foreground="#94A3B8">
+                                <Hyperlink Click="RequestRecovery_Click" Foreground="#8b5cf6" TextDecorations="None">
+                                    📧 שכחתי סיסמה — שלח קישור שחזור
+                                </Hyperlink>
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- 3. DASHBOARD SCREEN -->
+                <Grid x:Name="DashboardScreen" Visibility="Visible">
+                    <Grid.ColumnDefinitions>
+                        <!-- Sidebar (Right, since FlowDirection=RightToLeft) -->
+                        <ColumnDefinition Width="280"/>
+                        <!-- Main Content (Left) -->
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Sidebar Container -->
+                    <Border Grid.Column="0" Background="#400F172A" BorderBrush="#10FFFFFF" BorderThickness="0,0,1,0" Padding="20">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Sidebar Header -->
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,20">
+                                <TextBlock Text="🛡️" FontSize="24" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Master Authenticator" Foreground="#F8FAFC" FontSize="18" FontWeight="Bold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <!-- Search Bar -->
+                            <Grid Grid.Row="1" Margin="0,0,0,15">
+                                <TextBox x:Name="SearchInput" Style="{StaticResource ModernTextBox}" Tag="חפש חשבון..." Padding="30,8,10,8" TextChanged="SearchInput_TextChanged"/>
+                                <TextBlock Text="🔍" Foreground="#64748b" VerticalAlignment="Center" HorizontalAlignment="Left" Margin="10,0,0,0" IsHitTestVisible="False"/>
+                            </Grid>
+
+                            <!-- Add Account Button -->
+                            <Button Grid.Row="2" Style="{StaticResource ModernButton}" Background="#0e7490" Click="AddAccountButton_Click" Margin="0,0,0,20">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="➕" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="הוסף חשבון חדש" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+
+                            <!-- Tabs Navigation -->
+                            <StackPanel Grid.Row="3">
+                                <Button x:Name="TabAccountsBtn" Style="{StaticResource TabButton}" Tag="Active" Click="TabAccounts_Click" Margin="0,0,0,5">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="👥" Margin="0,0,10,0"/>
+                                        <TextBlock Text="החשבונות שלי"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="TabGuideBtn" Style="{StaticResource TabButton}" Click="TabGuide_Click" Margin="0,0,0,5">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="📖" Margin="0,0,10,0"/>
+                                        <TextBlock Text="מדריך למשתמש (פשוט)"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="TabSettingsBtn" Style="{StaticResource TabButton}" Click="TabSettings_Click">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="⚙️" Margin="0,0,10,0"/>
+                                        <TextBlock Text="הגדרות ואבטחה"/>
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+
+                            <!-- Sidebar Footer -->
+                            <StackPanel Grid.Row="4">
+                                <!-- Connection Status Badge -->
+                                <Border x:Name="SyncBadge" CornerRadius="12" Background="#1510B981" BorderBrush="#2010B981" BorderThickness="1" Padding="8,5" Margin="0,0,0,15" HorizontalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="6" Height="6" Fill="#10B981" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="SyncBadgeText" Text="שחזור וגיבוי פעיל 📧" Foreground="#10B981" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <Button Content="🔒 נעילת אפליקציה" Style="{StaticResource ModernButton}" Background="#1E293B" Height="35" FontSize="14" Click="LockApp_Click" Margin="0,0,0,15"/>
+                                <Separator Background="#10FFFFFF" Margin="0,0,0,10"/>
+                                <TextBlock HorizontalAlignment="Center" FontSize="11">
+                                    <Run Text="נוצר על ידי " Foreground="#94A3B8"/>
+                                    <Hyperlink NavigateUri="https://lev-good.github.io/Good-heart/" RequestNavigate="Hyperlink_RequestNavigate" Foreground="#8b5cf6" TextDecorations="None" FontWeight="Bold">לב טוב</Hyperlink>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Main Views Area -->
+                    <Grid Grid.Column="1" Margin="25">
+                        
+                        <!-- A. ACCOUNTS VIEW -->
+                        <Grid x:Name="AccountsView" Visibility="Visible">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" x:Name="AccountsCountTitle" Text="חשבונות פעילים (0)" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <!-- Scrollable list of accounts -->
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl x:Name="AccountsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border CornerRadius="12" Background="#601E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Margin="0,0,0,15" Padding="20">
+                                                <StackPanel>
+                                                    <!-- Card Header -->
+                                                    <Grid Margin="0,0,0,12">
+                                                        <StackPanel HorizontalAlignment="Right">
+                                                            <TextBlock Text="{Binding name}" Foreground="#F8FAFC" FontSize="16" FontWeight="Bold"/>
+                                                            <TextBlock Text="{Binding email}" Foreground="#94A3B8" FontSize="14" Visibility="{Binding email, Converter={StaticResource ResourceKey=NullToVisibilityConverter}}"/>
+                                                        </StackPanel>
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                            <Button Content="✏️" Width="30" Height="30" Background="Transparent" Foreground="#94A3B8" Cursor="Hand" Click="EditAccount_Click" Tag="{Binding id}" Margin="0,0,5,0"/>
+                                                            <Button Content="🗑️" Width="30" Height="30" Background="Transparent" Foreground="#ef4444" Cursor="Hand" Click="DeleteAccount_Click" Tag="{Binding id}"/>
+                                                        </StackPanel>
+                                                    </Grid>
+
+                                                    <!-- Code display row -->
+                                                    <Border CornerRadius="8" Background="#800F172A" BorderBrush="#10FFFFFF" BorderThickness="1" Padding="15,10" Cursor="Hand" MouseLeftButtonDown="OtpRow_Click" Tag="{Binding id}" Margin="0,0,0,12">
+                                                        <Grid>
+                                                            <TextBlock x:Name="OtpCodeText" Text="{Binding Code}" Foreground="#06b6d4" FontSize="28" FontFamily="Consolas" FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                                                <Grid Width="36" Height="36" Margin="0,0,10,0">
+                                                                    <Path x:Name="TimerPath" Stroke="{Binding TimerBrush}" StrokeThickness="3.5" StrokeDashArray="31.42 31.42" StrokeDashOffset="{Binding StrokeDashOffset}" RenderTransformOrigin="0.5,0.5">
+                                                                        <Path.RenderTransform>
+                                                                            <RotateTransform Angle="-90"/>
+                                                                        </Path.RenderTransform>
+                                                                        <Path.Data>
+                                                                            <EllipseGeometry Center="18,18" RadiusX="15" RadiusY="15"/>
+                                                                        </Path.Data>
+                                                                    </Path>
+                                                                    <TextBlock x:Name="TimerText" Text="{Binding TimerText}" Foreground="{Binding TimerBrush}" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                                </Grid>
+                                                            </StackPanel>
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- Accordion toggle button -->
+                                                    <Button Content="הערות וקודי גיבוי 🔽" Height="32" Background="#15FFFFFF" Foreground="#94A3B8" Click="ToggleDetails_Click" Tag="{Binding id}"/>
+
+                                                    <!-- Expandable Details Grid -->
+                                                    <StackPanel x:Name="DetailsPanel" Visibility="{Binding DetailsVisibility}" Margin="0,15,0,0">
+                                                        <Separator Background="#10FFFFFF" Margin="0,0,0,12"/>
+                                                        
+                                                        <!-- Notes -->
+                                                        <StackPanel Margin="0,0,0,15" Visibility="{Binding notes, Converter={StaticResource ResourceKey=NullToVisibilityConverter}}">
+                                                            <TextBlock Text="📝 הערות והנחיות:" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" Margin="0,0,0,5"/>
+                                                            <Border CornerRadius="6" Background="#20000000" Padding="10">
+                                                                <TextBlock Text="{Binding notes}" Foreground="#F8FAFC" FontSize="13" TextWrapping="Wrap"/>
+                                                            </Border>
+                                                        </StackPanel>
+
+                                                        <!-- Backup Codes -->
+                                                        <StackPanel>
+                                                            <TextBlock Text="🔐 קודי אבטחה וגיבוי (Google Backup Codes):" Foreground="#94A3B8" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
+                                                            <ItemsControl ItemsSource="{Binding backupCodes}">
+                                                                <ItemsControl.ItemsPanel>
+                                                                    <ItemsPanelTemplate>
+                                                                        <UniformGrid Columns="2" Rows="5"/>
+                                                                    </ItemsPanelTemplate>
+                                                                </ItemsControl.ItemsPanel>
+                                                                <ItemsControl.ItemTemplate>
+                                                                    <DataTemplate>
+                                                                        <Border CornerRadius="6" Background="#20FFFFFF" BorderBrush="#10FFFFFF" BorderThickness="1" Margin="3" Padding="8,5">
+                                                                            <Border.Style>
+                                                                                <Style TargetType="Border">
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding used}" Value="True">
+                                                                                            <Setter Property="Opacity" Value="0.35"/>
+                                                                                            <Setter Property="Background" Value="Transparent"/>
+                                                                                            <Setter Property="BorderBrush" Value="Transparent"/>
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </Border.Style>
+                                                                            <Grid>
+                                                                                <TextBlock x:Name="CodeTxt" Text="{Binding code}" Foreground="#F8FAFC" FontSize="13" FontFamily="Consolas" FontWeight="SemiBold" VerticalAlignment="Center" HorizontalAlignment="Right">
+                                                                                    <TextBlock.Style>
+                                                                                        <Style TargetType="TextBlock">
+                                                                                            <Style.Triggers>
+                                                                                                <DataTrigger Binding="{Binding used}" Value="True">
+                                                                                                    <Setter Property="TextDecorations" Value="Strikethrough"/>
+                                                                                                </DataTrigger>
+                                                                                            </Style.Triggers>
+                                                                                        </Style>
+                                                                                    </TextBlock.Style>
+                                                                                </TextBlock>
+                                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                                                                    <Button Content="✔" Width="24" Height="24" Background="Transparent" Foreground="#f59e0b" Cursor="Hand" Click="ToggleBackupCodeUsed_Click" ToolTip="סמן כמשומש / לא משומש"/>
+                                                                                    <Button Content="📋" Width="24" Height="24" Background="Transparent" Foreground="#94A3B8" Cursor="Hand" Click="CopyBackupCode_Click" ToolTip="העתק קוד"/>
+                                                                                </StackPanel>
+                                                                            </Grid>
+                                                                        </Border>
+                                                                    </DataTemplate>
+                                                                </ItemsControl.ItemTemplate>
+                                                            </ItemsControl>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+
+                            <!-- Empty State -->
+                            <StackPanel x:Name="EmptyStatePanel" Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock Text="📂" FontSize="64" HorizontalAlignment="Center" Foreground="#475569" Margin="0,0,0,15"/>
+                                <TextBlock Text="אין חשבונות להצגה" Foreground="#F8FAFC" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                <TextBlock Text="לא נמצאו חשבונות פעילים. לחץ על 'הוסף חשבון חדש' כדי להתחיל!" Foreground="#94A3B8" FontSize="14" HorizontalAlignment="Center" TextAlignment="Center"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- B. GUIDE VIEW -->
+                        <Grid x:Name="GuideView" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="📖 מדריך למשתמש - פשוט כמו משחק!" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="0,0,15,0">
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="25" Margin="0,0,0,20">
+                                        <StackPanel>
+                                            <TextBlock Text="ברוך הבא למדריך המובנה של Master Authenticator! כאן תלמד בדיוק איך למצוא ולהוסיף את חשבונות גוגל שלך לתוכנה בשלבים פשוטים ומצולמים." Foreground="#F8FAFC" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,20"/>
+                                            <Image Source="/Resources/master_authenticator_concept.png" MaxHeight="280" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Margin="0,0,0,10" Stretch="Uniform"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Step 1 -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="20" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="🛡️ שלב 1: כניסה לאבטחת החשבון והפעלת אימות דו-שלבי" Foreground="#06b6d4" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
+                                            <TextBlock Text="כנס לדף אבטחת החשבון של גוגל ולחץ על 'אימות דו-שלבי'. תוכל להיכנס ישירות בלחיצה כאן:" Foreground="#94A3B8" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                            <Button Content="🔗 לחץ לפתיחת קישור אימות דו-שלבי בגוגל" Width="300" Style="{StaticResource ModernButton}" Background="#1E293B" Foreground="#06b6d4" Click="OpenTwoStepUrl_Click" HorizontalAlignment="Right" Margin="0,0,0,15"/>
+                                            
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="א' - הפעלת האימות:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הפעלת אימות דו שלבי.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                    <TextBlock Text="ב' - הוספת טלפון לאימות:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הוספת מספר טלפון.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Step 2 -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="20" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="🔑 שלב 2: הוספת אפליקציית מאמת" Foreground="#06b6d4" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
+                                            <TextBlock Text="בתוך דף האימות הדו-שלבי, גלול מטה עד שתראה את האפשרות 'אפליקציית מאמת' ולחץ עליה, ולאחר מכן לחץ על 'הגדרת מאמת'." Foreground="#94A3B8" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="א' - בחירת אפליקציית מאמת:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/כניסה להוספת אפליקציה לאימות חשבונות.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                    <TextBlock Text="ב' - הגדרת מאמת:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הגדרת מאמת חשבונות.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Step 3 -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="20" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="⚙️ שלב 3: חשיפת המפתח הסודי והעתקתו" Foreground="#06b6d4" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
+                                            <TextBlock Text="גוגל תציג ברקוד לסריקה. מכיוון שהתוכנה במחשב, לחץ על הקישור שמתחת לברקוד שנקרא 'לא מצליח לסרוק?'. גוגל תחשוף קוד סודי ארוך ומיוחד (אותיות ומספרים בלבד). העתק את הקוד הזה!" Foreground="#94A3B8" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="א' - לחיצה על 'לא מצליח לסרוק':" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/לא הצלחת לסרוק את הקוד.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                    <TextBlock Text="ב' - העתקת המפתח הסודי המיוצר:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הקוד להעתיק מגוגל.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Step 4 -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="20" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="📝 שלב 4: הוספה לתוכנה ואימות בגוגל" Foreground="#06b6d4" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
+                                            <TextBlock Text="לחץ על 'הוסף חשבון גוגל חדש' בתוכנה שלנו, הזן את שם החשבון והדבק את המפתח הסודי. לאחר מכן, לחץ 'הבא' בגוגל והקלד את קוד ה-6 ספרות שמופק כעת בתוכנה לצורך אימות סופי." Foreground="#94A3B8" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="א' - אימות הקוד המיוצר בגוגל:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הקלדת הוקד מאפליקציה מגוגל.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                    <TextBlock Text="ב' - סיום הגדרת המאמת בהצלחה:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הפעלת אימות דו שלבי לאחר הגדרת האפליקציה.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Step 5 -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="20" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="💾 שלב 5: שמירת קודי גיבוי חירום (שמירה מכובדת)" Foreground="#06b6d4" FontSize="15" FontWeight="Bold" Margin="0,0,0,8"/>
+                                            <TextBlock Text="בדף האימות הדו-שלבי בגוגל, לחץ על 'קודי גיבוי'. תוכל להוריד את קובץ הגיבוי כקובץ טקסט (TXT) ולהעלות אותו ישירות בלחצן 'טען קובץ גיבוי' בטופס הוספת החשבון!" Foreground="#94A3B8" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,15"/>
+
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                                                    <TextBlock Text="א' - כניסה לדף קודי גיבוי:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/לקבלת קודי גיבוי.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                                    <TextBlock Text="ב' - הורדת קובץ קודי הגיבוי מגוגל:" Foreground="#F8FAFC" FontSize="12" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הורדת הקודי גיבוי.png" Height="220" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Grid><!-- C. SETTINGS VIEW -->
+                        <Grid x:Name="SettingsView" Visibility="Collapsed">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Text="הגדרות ואבטחה" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" Margin="0,0,0,20"/>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <WrapPanel Margin="0,0,10,0">
+                                    <!-- Card 1: Recovery Email -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Width="330" Margin="10" Padding="20">
+                                        <StackPanel>
+                                            <TextBlock Text="📧 אימייל לשחזור סיסמה" Foreground="#F8FAFC" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                                            <TextBlock Text="כתובת אימייל לשחזור:" Foreground="#94A3B8" FontSize="14" Margin="0,0,0,5"/>
+                                            <TextBox x:Name="SettingsEmail" Style="{StaticResource ModernTextBox}" Tag="example@gmail.com" Margin="0,0,0,10"/>
+                                            <TextBlock Text="כתובת המייל אליה תישלח סיסמת המאסטר במקרה של שכחה. שרת הגיבוי המרכזי ישלח לכתובת זו מייל שחזור מאובטח." Foreground="#64748b" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                                            <Button Content="שמור כתובת מייל 💾" Style="{StaticResource ModernButton}" Background="#8b5cf6" Click="SaveSettingsEmail_Click"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Card 2: Change Password -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Width="330" Margin="10" Padding="20">
+                                        <StackPanel>
+                                            <TextBlock Text="🔐 שינוי סיסמת מאסטר" Foreground="#F8FAFC" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                                            <TextBlock Text="סיסמה נוכחית:" Foreground="#94A3B8" FontSize="14" Margin="0,0,0,5"/>
+                                            <PasswordBox x:Name="OldPassword" Style="{StaticResource ModernPasswordBox}" Tag="הקלד סיסמה נוכחית..." Margin="0,0,0,10"/>
+                                            
+                                            <TextBlock Text="סיסמה חדשה:" Foreground="#94A3B8" FontSize="14" Margin="0,0,0,5"/>
+                                            <PasswordBox x:Name="NewPassword" Style="{StaticResource ModernPasswordBox}" Tag="הקלד סיסמה חדשה..." Margin="0,0,0,15"/>
+                                            
+                                            <Button Content="עדכן סיסמה ושמור 💾" Style="{StaticResource ModernButton}" Background="#8b5cf6" Click="ChangeMasterPassword_Click"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Card 3: Export/Import -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Width="330" Margin="10" Padding="20">
+                                        <StackPanel>
+                                            <TextBlock Text="💾 ייבוא וייצוא נתונים (גיבוי ידני)" Foreground="#F8FAFC" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                                            <TextBlock Text="ניתן לייצא את כל החשבונות המוגדרים, קודי הגיבוי וההערות לקובץ מוצפן במלואו. קובץ זה מוגן בסיסמת המאסטר שלך." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                                            
+                                            <Button Content="📥 לייצא גיבוי מוצפן" Style="{StaticResource ModernButton}" Background="#10b981" Click="ExportBackup_Click" Margin="0,0,0,10"/>
+                                            <Button Content="📤 ייבא קובץ גיבוי" Style="{StaticResource ModernButton}" Background="#475569" Click="ImportBackup_Click"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Card 4: Danger Zone -->
+                                    <Border CornerRadius="12" Background="#401E293B" BorderBrush="#20EF4444" BorderThickness="1" Width="330" Margin="10" Padding="20">
+                                        <StackPanel>
+                                            <TextBlock Text="⚠️ אזור סכנה (איפוס מלא)" Foreground="#ef4444" FontSize="15" FontWeight="Bold" Margin="0,0,0,12"/>
+                                            <TextBlock Text="לחיצה על כפתור זה תמחק לחלוטין ובאופן סופי את כל החשבונות, סיסמת המאסטר וההגדרות ממחשב זה. לא ניתן לשחזר נתונים שנמחקו!" Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,15"/>
+                                            
+                                            <Button Content="❌ אפס מערכת ומחק הכל" Style="{StaticResource ModernButton}" Background="#ef4444" Click="ResetSystem_Click"/>
+                                        </StackPanel>
+                                    </Border>
+                                </WrapPanel>
+                            </ScrollViewer>
+                        </Grid>
+                        
+                    </Grid>
+                </Grid>
+            </Grid>
+
+            <!-- 4. ADD/EDIT ACCOUNT MODAL OVERLAY -->
+            <Grid x:Name="AccountModalOverlay" Background="#B0000000" Visibility="Collapsed">
+                <Border CornerRadius="12" Background="#F01E293B" BorderBrush="#20FFFFFF" BorderThickness="1.5" Width="850" Height="550" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="25">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <!-- Form Column (Right, Hebrew Flow) -->
+                            <ColumnDefinition Width="1.2*"/>
+                            <!-- Guide Column (Left) -->
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Modal Header -->
+                        <Grid Grid.Row="0" Grid.ColumnSpan="2" Margin="0,0,0,15">
+                            <TextBlock x:Name="ModalTitle" Text="הוספת חשבון חדש" Foreground="#F8FAFC" FontSize="18" FontWeight="Bold" HorizontalAlignment="Right"/>
+                            <Button Content="✕" Width="24" Height="24" Background="Transparent" Foreground="#94A3B8" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="CloseModal_Click" HorizontalAlignment="Left"/>
+                        </Grid>
+
+                        <!-- Form Area (Right Column) -->
+                        <ScrollViewer Grid.Row="1" Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,15,0">
+                            <StackPanel Margin="0,0,10,0">
+                                <TextBlock Text="שם השירות / אתר (לדוגמה: Google, Facebook):" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="ModalAccName" Style="{StaticResource ModernTextBox}" Tag="הקלד שם מזהה (למשל: GitHub)..." GotFocus="ModalAccName_GotFocus" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="כתובת אימייל או שם משתמש (אופציונלי):" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="ModalAccEmail" Style="{StaticResource ModernTextBox}" Tag="username@example.com" GotFocus="ModalAccName_GotFocus" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="מפתח סודי (Base32 Secret):" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox x:Name="ModalAccSecret" Grid.Column="0" Style="{StaticResource ModernTextBox}" Tag="הקלד/הדבק את המפתח הסודי או סרוק ברקוד..." GotFocus="ModalAccSecret_GotFocus" Margin="0,0,5,0"/>
+                                    <Button x:Name="ScanQrBtn" Grid.Column="1" Content="סרוק QR מהמסך 📷" Style="{StaticResource ModernButton}" Background="#0ea5e9" Click="ScanQrBtn_Click" Padding="12,8" FontSize="13"/>
+                                </Grid>
+
+                                <TextBlock Text="הערות לחשבון:" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="ModalAccNotes" Style="{StaticResource ModernTextBox}" Tag="הקלד הערות ספציפיות לחשבון (שלוחה, שאלות אבטחה)..." Height="60" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" GotFocus="ModalAccNotes_GotFocus" Margin="0,0,0,12"/>
+
+                                <!-- Toggle Backup Codes Button -->
+                                <Button x:Name="ToggleModalBackupBtn" Content="➕ הוספת 10 קודי גיבוי לחשבון (אופציונלי)" Height="32" Background="#15FFFFFF" Foreground="#94A3B8" Click="ToggleModalBackup_Click" Margin="0,0,0,12"/>
+
+                                <!-- Backup Codes Container -->
+                                <StackPanel x:Name="ModalBackupCodesPanel" Visibility="Collapsed" Margin="0,0,0,12">
+                                    <Border CornerRadius="8" Background="#108B5CF6" BorderBrush="#208B5CF6" BorderThickness="1" Padding="10" Margin="0,0,0,10">
+                                        <Grid>
+                                            <TextBlock Text="העלה את קובץ הגיבוי שגוגל נותנת להורדה" Foreground="#94A3B8" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                            <Button Content="📥 טען קובץ גיבוי (TXT)" Width="150" Style="{StaticResource ModernButton}" Background="#334155" FontSize="11" Padding="10,5" Click="UploadBackupCodesFile_Click" HorizontalAlignment="Left"/>
+                                        </Grid>
+                                    </Border>
+                                    
+                                    <UniformGrid Columns="2" Rows="5">
+                                        <TextBox x:Name="ModalCode1" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 1" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode2" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 2" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode3" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 3" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode4" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 4" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode5" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 5" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode6" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 6" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode7" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 7" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode8" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 8" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode9" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 9" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                        <TextBox x:Name="ModalCode10" Style="{StaticResource ModernTextBox}" Tag="קוד גיבוי 10" Margin="3" GotFocus="ModalAccBackup_GotFocus"/>
+                                    </UniformGrid>
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Guide Area (Left Column) -->
+                        <Border Grid.Column="1" Grid.Row="1" CornerRadius="8" Background="#20FFFFFF" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="15" Margin="15,0,0,0">
+                            <Grid>
+                                <!-- Welcome screen -->
+                                <StackPanel x:Name="ModalGuide_Welcome" VerticalAlignment="Center">
+                                    <TextBlock Text="💡 הדרכה מהירה בטופס" Foreground="#8B5CF6" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock Text="לחץ על שדה כלשהו בטופס הימני (שם, מפתח סודי, הערות או קודי גיבוי), וכאן יופיע מיד הסבר מפורט יחד עם צילום מסך מתוך הגדרות גוגל שיסביר לך בדיוק מה לעשות!" Foreground="#F8FAFC" FontSize="13" TextWrapping="Wrap" LineHeight="1.5"/>
+                                </StackPanel>
+
+                                <!-- Name focus help -->
+                                <StackPanel x:Name="ModalGuide_Name" Visibility="Collapsed" VerticalAlignment="Center">
+                                    <TextBlock Text="🏷️ שם החשבון ואימייל" Foreground="#8B5CF6" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock Text="רשום שם קצר ונוח לחשבון (לדוגמה: 'חשבון 1' או 'אימייל עבודה'). מומלץ גם להזין את כתובת האימייל של החשבון בשדה השני כדי לדעת תמיד למי הוא שייך." Foreground="#F8FAFC" FontSize="13" TextWrapping="Wrap" LineHeight="1.5"/>
+                                </StackPanel>
+
+                                <!-- Secret Key focus help -->
+                                <Grid x:Name="ModalGuide_Secret" Visibility="Collapsed">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="🔑 קבלת מפתח האימות מגוגל" Foreground="#8B5CF6" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                    <TextBlock Grid.Row="1" Text="נווט בין השלבים השונים לצפייה במדריך המצולם:" Foreground="#94A3B8" FontSize="11" Margin="0,0,0,10"/>
+                                    
+                                    <!-- Screenshot Sub-tabs -->
+                                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel>
+                                            <TabControl x:Name="SecretGuideTabControl" Background="Transparent" BorderThickness="0">
+                                                <TabControl.Resources>
+                                                    <Style TargetType="TabItem">
+                                                        <Setter Property="HeaderTemplate">
+                                                            <Setter.Value>
+                                                                <DataTemplate>
+                                                                    <TextBlock Text="{Binding}" Foreground="#94A3B8" FontSize="10" Padding="5,2" FontWeight="SemiBold"/>
+                                                                </DataTemplate>
+                                                            </Setter.Value>
+                                                        </Setter>
+                                                        <Style.Triggers>
+                                                            <Trigger Property="IsSelected" Value="True">
+                                                                <Setter Property="Background" Value="#158B5CF6"/>
+                                                            </Trigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TabControl.Resources>
+                                                <TabItem Header="1. אימות">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="בחשבון גוגל שלך, באבטחה, לחץ על 'אימות דו-שלבי'." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/הפעלת אימות דו שלבי.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="2. טלפון">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="גוגל תבקש להוסיף טלפון לאימות (ניתן גם לדלג)." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/הוספת מספר טלפון.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="3. הוספה">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="לחץ על 'אפליקציית מאמת' (Authenticator app)." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/כניסה להוספת אפליקציה לאימות חשבונות.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="4. הגדרה">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="לחץ על הכפתור 'הגדרת מאמת'." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/הגדרת מאמת חשבונות.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="5. לא מצליח">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="לחץ על 'לא מצליח לסרוק את הברקוד?' מתחת לברקוד." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/לא הצלחת לסרוק את הקוד.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="6. מפתח">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="גוגל תציג את המפתח הסודי. העתק אותו והדבק אותו מימין." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/הקוד להעתיק מגוגל.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="7. הזנה">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="לחץ על 'הבא' בגוגל, והזן את קוד ה-6 ספרות מהתוכנה." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/הקלדת הוקד מאפליקציה מגוגל.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                                <TabItem Header="8. סיום">
+                                                    <StackPanel Margin="0,10,0,0">
+                                                        <TextBlock Text="האימות הדו-שלבי מופעל כעת בהצלחה ומקושר לתוכנה." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                        <Image Source="/Resources/הפעלת אימות דו שלבי לאחר הגדרת האפליקציה.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                    </StackPanel>
+                                                </TabItem>
+                                            </TabControl>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </Grid>
+
+                                <!-- Notes focus help -->
+                                <StackPanel x:Name="ModalGuide_Notes" Visibility="Collapsed" VerticalAlignment="Center">
+                                    <TextBlock Text="📝 הערות חופשיות" Foreground="#8B5CF6" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock Text="רשום כאן פרטים נוספים שיעזרו לך לזכור פרטים חשובים על החשבון (כגון: 'שלוחה 2 בטלפון', 'שאלת אבטחה: שם אימי הוא...', 'שייך לחשבון עבודה וכו'')." Foreground="#F8FAFC" FontSize="13" TextWrapping="Wrap" LineHeight="1.5"/>
+                                </StackPanel>
+
+                                <!-- Backup focus help -->
+                                <Grid x:Name="ModalGuide_Backup" Visibility="Collapsed">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Text="🔐 קודי גיבוי חירום (אופציונלי)" Foreground="#8B5CF6" FontSize="14" FontWeight="Bold" Margin="0,0,0,5"/>
+                                    <TextBlock Grid.Row="1" Text="נווט בין השלבים לקבלת הקודים מגוגל:" Foreground="#94A3B8" FontSize="11" Margin="0,0,0,10"/>
+
+                                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+                                        <TabControl x:Name="BackupGuideTabControl" Background="Transparent" BorderThickness="0">
+                                            <TabControl.Resources>
+                                                <Style TargetType="TabItem">
+                                                    <Setter Property="HeaderTemplate">
+                                                        <Setter.Value>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding}" Foreground="#94A3B8" FontSize="11" Padding="8,2" FontWeight="SemiBold"/>
+                                                            </DataTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                    <Style.Triggers>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter Property="Background" Value="#158B5CF6"/>
+                                                        </Trigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TabControl.Resources>
+                                            <TabItem Header="1. קבלת קודים">
+                                                <StackPanel Margin="0,10,0,0">
+                                                    <TextBlock Text="בדף האימות הדו-שלבי, גלול מטה ולחץ על 'קודי גיבוי' (Backup codes)." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/לקבלת קודי גיבוי.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </TabItem>
+                                            <TabItem Header="2. רשימת קודים">
+                                                <StackPanel Margin="0,10,0,0">
+                                                    <TextBlock Text="לחץ על 'הורד קודים' לקבלת קובץ TXT, וטען אותו בלחיצה על כפתור טעינת קובץ גיבוי מימין." Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap" Margin="0,0,0,5"/>
+                                                    <Image Source="/Resources/הורדת הקודי גיבוי.png" MaxHeight="180" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Stretch="Uniform"/>
+                                                </StackPanel>
+                                            </TabItem>
+                                        </TabControl>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Grid>
+                        </Border>
+
+                        <!-- Modal Footer -->
+                        <Grid Grid.Row="2" Grid.ColumnSpan="2" Margin="0,15,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                                <Button Content="ביטול" Width="100" Style="{StaticResource ModernButton}" Background="#475569" Click="CloseModal_Click" Margin="0,0,10,0"/>
+                                <Button x:Name="SaveAccountSubmitBtn" Content="שמור חשבון ✨" Width="150" Style="{StaticResource ModernButton}" Background="#8b5cf6" Click="SaveAccountSubmit_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+                
+                <!-- Lightbox Image Preview Overlay -->
+                <Grid x:Name="ImageLightboxOverlay" Visibility="Collapsed" Background="#F0090D1A" MouseLeftButtonDown="CloseLightbox_MouseClick" Panel.ZIndex="1000">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    
+                    <!-- Close Button -->
+                    <Button Content="✕ חזור למדריך" Width="140" Height="40" Style="{StaticResource ModernButton}" Background="#30FFFFFF" Foreground="White" FontSize="14" FontWeight="Bold" Cursor="Hand" Click="CloseLightbox_Click" HorizontalAlignment="Left" Margin="20,20,0,0" Grid.Row="0"/>
+                    
+                    <!-- High-res Image -->
+                    <Image x:Name="LightboxImage" Margin="40" Stretch="Uniform" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+            </Grid>
+
+        </Grid>
+    </Border>
+</Window>

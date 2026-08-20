@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>cross-test</AssemblyName>
+    <RootNamespace>CrossTest</RootNamespace>
+  </PropertyGroup>
+
+  <!-- מקשר את קוד המקור האמיתי של MasterAuthenticator (לא עותק!) -->
+  <ItemGroup>
+    <Compile Include="..\..\MasterAuthenticator\SecurityManager.cs" Link="SecurityManager.cs" />
+    <Compile Include="..\..\MasterAuthenticator\TotpGenerator.cs" Link="TotpGenerator.cs" />
+  </ItemGroup>
+
+</Project>

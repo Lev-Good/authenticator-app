@@ -1,0 +1,19 @@
+# .NET build output
+bin/
+obj/
+publish/
+*.user
+
+# Release binaries (distributed via GitHub Releases, not committed)
+*.exe
+
+# IDE / OS
+.vs/
+.idea/
+*.suo
+Thumbs.db
+Desktop.ini
+
+# Working copies and local notes
+*.rar
+*.zip
