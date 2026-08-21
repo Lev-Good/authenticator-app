@@ -1210,54 +1210,87 @@
     }
 
     /* ========================================================
-       טוסטים והודעות (TOASTS)
+       טוסטים והודעות קופצות (TOAST NOTIFICATIONS)
        ======================================================== */
     .toast-container {
       position: fixed;
       top: 24px;
-      left: 24px;
-      z-index: 9999;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10000;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      align-items: center;
+      gap: 10px;
       pointer-events: none;
+      width: auto;
+      max-width: 90vw;
     }
     .toast-item {
       pointer-events: auto;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 12px 18px;
+      padding: 9px 18px 9px 12px;
       background: var(--bg-surface);
       color: var(--text-main);
-      border-radius: var(--radius-md);
+      border-radius: var(--radius-full);
       border: 1px solid var(--border-strong);
       box-shadow: var(--shadow-lg);
       font-size: 13.5px;
       font-weight: 500;
-      animation: toastIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-      min-width: 260px;
-      max-width: 380px;
+      animation: toastSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .toast-item.fade-out {
+      animation: toastSlideUp 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
+    }
+    .toast-icon-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     }
     .toast-item.success {
       border-color: var(--color-success-border);
-      background: var(--bg-surface);
     }
-    .toast-item.success .toast-icon { color: var(--color-success); }
+    .toast-item.success .toast-icon-badge {
+      background: var(--color-success-light);
+      color: var(--color-success);
+    }
     .toast-item.error {
       border-color: var(--color-danger-border);
-      background: var(--bg-surface);
     }
-    .toast-item.error .toast-icon { color: var(--color-danger); }
+    .toast-item.error .toast-icon-badge {
+      background: var(--color-danger-light);
+      color: var(--color-danger);
+    }
+    .toast-item.warning {
+      border-color: var(--color-warning-border);
+    }
+    .toast-item.warning .toast-icon-badge {
+      background: var(--color-warning-light);
+      color: var(--color-warning);
+    }
     .toast-item.info {
       border-color: var(--color-primary-border);
-      background: var(--bg-surface);
     }
-    .toast-item.info .toast-icon { color: var(--color-primary); }
+    .toast-item.info .toast-icon-badge {
+      background: var(--color-primary-light);
+      color: var(--color-primary);
+    }
 
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes toastSlideDown {
+      from { opacity: 0; transform: translateY(-16px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastSlideUp {
+      from { opacity: 1; transform: translateY(0) scale(1); }
+      to { opacity: 0; transform: translateY(-16px) scale(0.95); }
     }
 
     /* התאמות למובייל */
@@ -2514,22 +2547,33 @@
     // ----------------------------------------------------
     function showToast(message, type = "success") {
       const container = document.getElementById("toastContainer");
+      if (!container) return;
+      
       const toast = document.createElement("div");
-      toast.className = `toast ${type}`;
+      toast.className = `toast-item ${type}`;
       
-      let icon = "🔔";
-      if (type === "success") icon = "✅";
-      if (type === "error") icon = "❌";
-      if (type === "warning") icon = "⚠️";
-      if (type === "info") icon = "ℹ️";
+      let iconSvg = '';
+      if (type === "success") {
+        iconSvg = '<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+      } else if (type === "error") {
+        iconSvg = '<svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+      } else if (type === "warning") {
+        iconSvg = '<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      } else {
+        iconSvg = '<svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+      }
       
-      toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+      toast.innerHTML = `
+        <div class="toast-icon-badge">${iconSvg}</div>
+        <span class="toast-message">${message}</span>
+      `;
+      
       container.appendChild(toast);
       
       setTimeout(() => {
-        toast.style.animation = "fadeIn 0.3s ease reverse forwards";
-        setTimeout(() => toast.remove(), 300);
-      }, 3500);
+        toast.classList.add("fade-out");
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
     }
 
     // מעבר בין מסכים ראשיים
