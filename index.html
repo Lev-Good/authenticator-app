@@ -37,7 +37,6 @@
     }
   </style>
   </style>
-  </style>
 
   <!-- ספריית סריקת קוד QR - מוטמעת מקומית (ללא תלות ברשת חיצונית) -->
   <script>
@@ -2080,87 +2079,6 @@
     }
 
 
-
-    // ----------------------------------------------------
-    // ניהול מצב תצוגה (Dark & Light Mode)
-    // ----------------------------------------------------
-    const THEME_STORAGE_KEY = "master_auth_theme_pref";
-    
-    function initTheme() {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      if (savedTheme === "dark" || (!savedTheme && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
-        setTheme("dark");
-      } else {
-        setTheme("light");
-      }
-    }
-
-    function setTheme(theme) {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
-      
-      const sunIcons = document.querySelectorAll(".theme-icon-sun");
-      const moonIcons = document.querySelectorAll(".theme-icon-moon");
-      
-      if (theme === "dark") {
-        sunIcons.forEach(i => i.style.display = "inline-block");
-        moonIcons.forEach(i => i.style.display = "none");
-      } else {
-        sunIcons.forEach(i => i.style.display = "none");
-        moonIcons.forEach(i => i.style.display = "inline-block");
-      }
-    }
-
-    function toggleTheme() {
-      const current = document.documentElement.getAttribute("data-theme") || "light";
-      const next = current === "dark" ? "light" : "dark";
-      setTheme(next);
-    }
-
-    // ----------------------------------------------------
-    // ניהול מודאל התחברות / הגדרה בשער הראשי
-    // ----------------------------------------------------
-    function openAuthModal(mode = "login") {
-      switchAuthMode(mode);
-      const modal = document.getElementById("authModal");
-      if (modal) modal.classList.add("active");
-      
-      setTimeout(() => {
-        if (mode === "login") {
-          const emailInput = document.getElementById("lockEmail");
-          if (emailInput) emailInput.focus();
-        } else {
-          const passInput = document.getElementById("setupPassword");
-          if (passInput) passInput.focus();
-        }
-      }, 50);
-    }
-
-    function closeAuthModal() {
-      const modal = document.getElementById("authModal");
-      if (modal) modal.classList.remove("active");
-    }
-
-    function switchAuthMode(mode) {
-      const tabLogin = document.getElementById("tabBtnAuthLogin");
-      const tabSetup = document.getElementById("tabBtnAuthSetup");
-      const formLogin = document.getElementById("authFormLogin");
-      const formSetup = document.getElementById("authFormSetup");
-
-      if (mode === "login") {
-        if (tabLogin) tabLogin.classList.add("active");
-        if (tabSetup) tabSetup.classList.remove("active");
-        if (formLogin) formLogin.style.display = "block";
-        if (formSetup) formSetup.style.display = "none";
-      } else {
-        if (tabSetup) tabSetup.classList.add("active");
-        if (tabLogin) tabLogin.classList.remove("active");
-        if (formSetup) formSetup.style.display = "block";
-        if (formLogin) formLogin.style.display = "none";
-      }
-    }
-
-
     
     // ----------------------------------------------------
     // כתובת שרת הגיבוי החדש (Cloudflare Worker)
@@ -2610,7 +2528,6 @@
 
     // מעבר בין מסכים ראשיים
     function showScreen(screenId) {
-      if (screenId === "dashboardScreen") closeAuthModal();
       if (screenId === "dashboardScreen") closeAuthModal();
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById(screenId).classList.add("active");
@@ -4076,7 +3993,6 @@
         });
       }
     }
-  
   
   </script>
 </body>
