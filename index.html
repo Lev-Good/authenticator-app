@@ -6,10 +6,10 @@
   <title>Master Authenticator - מאמת חשבונות גוגל מרכזי ומאובטח</title>
   <meta name="description" content="כלי מאובטח ומרכזי לניהול מפתחות אימות TOTP וקודי גיבוי לחשבונות גוגל בעיצוב מינימליסטי ומודרני.">
   
-  <!-- אייקון האתר (Favicon) בפורמט SVG וקטורי נקי -->
+  <!-- Favicon SVG -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%234f46e5%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z%22/></svg>">
   
-  <!-- פונטים מוטמעים מקומית (ללא תלות ברשת חיצונית) - Rubik + Source Code Pro -->
+  <!-- פונטים מוטמעים מקומית -->
   <style>
 @font-face {
       font-family: 'Rubik';
@@ -37,6 +37,7 @@
     }
   </style>
   </style>
+  </style>
 
   <!-- ספריית סריקת קוד QR - מוטמעת מקומית (ללא תלות ברשת חיצונית) -->
   <script>
@@ -50,7 +51,7 @@
       --font-sans: 'Rubik', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       --font-mono: 'Source Code Pro', monospace;
 
-      /* Light Theme (ברירת מחדל) */
+      /* Light Theme */
       --bg-app: #f8fafc;
       --bg-surface: #ffffff;
       --bg-sidebar: #ffffff;
@@ -87,8 +88,8 @@
       --color-danger-border: #fecaca;
 
       --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.08), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
-      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
       --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
       
@@ -104,7 +105,7 @@
     }
 
     [data-theme="dark"] {
-      /* Dark Theme (יוקרתי, כהה ומינימליסטי) */
+      /* Dark Theme */
       --bg-app: #090d16;
       --bg-surface: #0f172a;
       --bg-sidebar: #0b1120;
@@ -147,7 +148,6 @@
       --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7);
     }
 
-    /* איפוס בסיסי */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
@@ -197,7 +197,7 @@
     }
 
     /* ========================================================
-       דף כניסה ושער ראשי (LANDING / PORTAL SCREEN)
+       1. דף כניסה ושער ראשי (LANDING / PORTAL SCREEN)
        ======================================================== */
     #landingScreen {
       min-height: 100vh;
@@ -252,8 +252,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       border-radius: var(--radius-md);
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
@@ -321,9 +321,9 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 9px;
-      padding: 12px 26px;
-      font-size: 15px;
+      gap: 8px;
+      padding: 10px 22px;
+      font-size: 14px;
       font-weight: 600;
       font-family: inherit;
       border-radius: var(--radius-md);
@@ -336,11 +336,11 @@
     .btn-primary {
       background: var(--color-primary);
       color: #ffffff;
-      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
     }
     .btn-primary:hover {
       background: var(--color-primary-hover);
-      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4);
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.35);
       transform: translateY(-1px);
     }
     .btn-secondary {
@@ -353,7 +353,7 @@
       border-color: var(--text-dim);
     }
     .btn-sm {
-      padding: 8px 14px;
+      padding: 7px 14px;
       font-size: 13px;
       border-radius: var(--radius-sm);
     }
@@ -421,7 +421,7 @@
     }
 
     /* ========================================================
-       מודאל התחברות / הגדרה קומפקטי (AUTH MODAL POPUP)
+       2. מודאל התחברות / הגדרה קומפקטי (AUTH MODAL POPUP)
        ======================================================== */
     .modal-overlay {
       position: fixed;
@@ -461,15 +461,15 @@
     .auth-tabs {
       display: flex;
       background: var(--bg-subtle);
-      padding: 6px;
+      padding: 5px;
       margin: 18px 20px 0;
       border-radius: var(--radius-md);
       gap: 4px;
     }
     .auth-tab-btn {
       flex: 1;
-      padding: 9px 12px;
-      font-size: 13.5px;
+      padding: 8px 12px;
+      font-size: 13px;
       font-weight: 600;
       font-family: inherit;
       border: none;
@@ -489,12 +489,12 @@
       box-shadow: var(--shadow-xs);
     }
     .auth-body {
-      padding: 22px 24px 26px;
+      padding: 20px 24px 24px;
     }
     .modal-close-btn {
       position: absolute;
-      top: 16px;
-      left: 16px;
+      top: 14px;
+      left: 14px;
       background: transparent;
       border: none;
       color: var(--text-dim);
@@ -514,7 +514,7 @@
 
     /* טפסים ושדות קלט */
     .form-group {
-      margin-bottom: 16px;
+      margin-bottom: 15px;
       text-align: right;
     }
     .form-group label {
@@ -537,8 +537,8 @@
     }
     .form-control {
       width: 100%;
-      padding: 10px 38px 10px 14px;
-      font-size: 14px;
+      padding: 9px 38px 9px 12px;
+      font-size: 13.5px;
       font-family: inherit;
       background: var(--bg-input);
       color: var(--text-main);
@@ -555,14 +555,14 @@
     .input-help {
       font-size: 11.5px;
       color: var(--text-muted);
-      margin-top: 5px;
+      margin-top: 4px;
       line-height: 1.4;
     }
     .form-actions {
-      margin-top: 20px;
+      margin-top: 18px;
     }
     .auth-links {
-      margin-top: 16px;
+      margin-top: 14px;
       text-align: center;
       font-size: 12.5px;
       display: flex;
@@ -579,7 +579,7 @@
     }
 
     /* ========================================================
-       לוח בקרה ראשי קבוע ויציב (DASHBOARD SCREEN)
+       3. לוח בקרה ראשי קבוע ויציב (DASHBOARD SCREEN)
        ======================================================== */
     #dashboardScreen {
       height: 100vh;
@@ -607,7 +607,7 @@
     .header-brand {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       font-size: 18px;
       font-weight: 700;
       color: var(--text-main);
@@ -615,7 +615,7 @@
     .header-right-tools {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
     .sync-status-badge {
       display: inline-flex;
@@ -663,7 +663,7 @@
       position: relative;
     }
     .sidebar-search .form-control {
-      padding: 9px 36px 9px 12px;
+      padding: 8px 36px 8px 12px;
       font-size: 13.5px;
     }
     .sidebar-search .search-icon-svg {
@@ -676,7 +676,7 @@
     }
     .btn-add-account-cta {
       width: 100%;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .nav-tabs-menu {
@@ -688,7 +688,7 @@
     .nav-tab-item {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       width: 100%;
       padding: 10px 14px;
       border-radius: var(--radius-md);
@@ -726,7 +726,7 @@
       font-weight: 600;
     }
 
-    /* תוכן מרכזי שנגלל באופן עצמאי */
+    /* תוכן מרכזי */
     .dashboard-content {
       flex: 1;
       height: 100%;
@@ -739,6 +739,9 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 22px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
     }
     .view-title {
       font-size: 20px;
@@ -749,19 +752,21 @@
       gap: 10px;
     }
 
-    /* גריד כרטיסי החשבונות */
+    /* גריד כרטיסי החשבונות - רספונסיבי ורחב */
     .accounts-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
       align-items: start;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     .account-card {
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      padding: 20px;
+      padding: 18px 20px;
       box-shadow: var(--shadow-sm);
       transition: var(--transition);
       position: relative;
@@ -784,13 +789,13 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
     .card-name-group {
       display: flex;
       flex-direction: column;
       gap: 2px;
-      max-width: 210px;
+      max-width: 220px;
     }
     .card-name {
       font-size: 16px;
@@ -834,7 +839,7 @@
       background: var(--bg-subtle);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: 14px 18px;
+      padding: 12px 18px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -849,10 +854,10 @@
     }
     .totp-code-text {
       font-family: var(--font-mono);
-      font-size: 28px;
+      font-size: 27px;
       font-weight: 700;
       color: var(--color-primary);
-      letter-spacing: 3px;
+      letter-spacing: 3.5px;
       direction: ltr;
     }
     .timer-badge-container {
@@ -879,7 +884,7 @@
       stroke: var(--color-primary);
       stroke-width: 3;
       stroke-linecap: round;
-      stroke-dasharray: 94.2;
+      stroke-dasharray: 94.24;
       stroke-dashoffset: 0;
       transition: stroke-dashoffset 0.5s linear, stroke 0.3s ease;
     }
@@ -894,12 +899,12 @@
     /* כפתור פתיחת פרטים נוספים (הערות וקודי גיבוי) */
     .btn-toggle-details {
       width: 100%;
-      padding: 7px 10px;
+      padding: 8px 12px;
       font-size: 12.5px;
-      font-weight: 600;
+      font-weight: 500;
       font-family: inherit;
       color: var(--text-muted);
-      background: transparent;
+      background: var(--bg-subtle);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-sm);
       cursor: pointer;
@@ -909,8 +914,9 @@
       transition: var(--transition);
     }
     .btn-toggle-details:hover {
-      background: var(--bg-subtle);
+      background: var(--bg-card-hover);
       color: var(--text-main);
+      border-color: var(--border-strong);
     }
     .btn-toggle-details .chevron-icon {
       transition: transform 0.2s ease;
@@ -1031,6 +1037,7 @@
       border-radius: var(--radius-xl);
       padding: 32px;
       max-width: 960px;
+      margin: 0 auto;
     }
     .guide-step-card {
       background: var(--bg-app);
@@ -1089,6 +1096,7 @@
       grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
       gap: 20px;
       max-width: 1000px;
+      margin: 0 auto;
     }
     .settings-card {
       background: var(--bg-surface);
@@ -1472,7 +1480,7 @@
       <div class="header-right-tools">
         <div class="sync-status-badge" id="syncStatus">
           <span class="sync-dot" id="syncStatusDot"></span>
-          <span id="syncStatusText">מאובטח מקומית</span>
+          <span id="syncStatusText">מחובר ומסונכרן לענן</span>
         </div>
 
         <button class="theme-toggle-btn" onclick="toggleTheme()" title="החלף מצב כהה/בהיר">
@@ -1539,7 +1547,7 @@
           </div>
         </div>
 
-        <!-- תצוגה 2: מדריך למשתמש (Embedded Guide View) -->
+        <!-- תצוגה 2: מדריך למשתמש (Guide View) -->
         <div id="guideView" style="display: none;">
           <div class="view-header">
             <h2 class="view-title">
@@ -2072,6 +2080,87 @@
     }
 
 
+
+    // ----------------------------------------------------
+    // ניהול מצב תצוגה (Dark & Light Mode)
+    // ----------------------------------------------------
+    const THEME_STORAGE_KEY = "master_auth_theme_pref";
+    
+    function initTheme() {
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      if (savedTheme === "dark" || (!savedTheme && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        setTheme("dark");
+      } else {
+        setTheme("light");
+      }
+    }
+
+    function setTheme(theme) {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+      
+      const sunIcons = document.querySelectorAll(".theme-icon-sun");
+      const moonIcons = document.querySelectorAll(".theme-icon-moon");
+      
+      if (theme === "dark") {
+        sunIcons.forEach(i => i.style.display = "inline-block");
+        moonIcons.forEach(i => i.style.display = "none");
+      } else {
+        sunIcons.forEach(i => i.style.display = "none");
+        moonIcons.forEach(i => i.style.display = "inline-block");
+      }
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute("data-theme") || "light";
+      const next = current === "dark" ? "light" : "dark";
+      setTheme(next);
+    }
+
+    // ----------------------------------------------------
+    // ניהול מודאל התחברות / הגדרה בשער הראשי
+    // ----------------------------------------------------
+    function openAuthModal(mode = "login") {
+      switchAuthMode(mode);
+      const modal = document.getElementById("authModal");
+      if (modal) modal.classList.add("active");
+      
+      setTimeout(() => {
+        if (mode === "login") {
+          const emailInput = document.getElementById("lockEmail");
+          if (emailInput) emailInput.focus();
+        } else {
+          const passInput = document.getElementById("setupPassword");
+          if (passInput) passInput.focus();
+        }
+      }, 50);
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById("authModal");
+      if (modal) modal.classList.remove("active");
+    }
+
+    function switchAuthMode(mode) {
+      const tabLogin = document.getElementById("tabBtnAuthLogin");
+      const tabSetup = document.getElementById("tabBtnAuthSetup");
+      const formLogin = document.getElementById("authFormLogin");
+      const formSetup = document.getElementById("authFormSetup");
+
+      if (mode === "login") {
+        if (tabLogin) tabLogin.classList.add("active");
+        if (tabSetup) tabSetup.classList.remove("active");
+        if (formLogin) formLogin.style.display = "block";
+        if (formSetup) formSetup.style.display = "none";
+      } else {
+        if (tabSetup) tabSetup.classList.add("active");
+        if (tabLogin) tabLogin.classList.remove("active");
+        if (formSetup) formSetup.style.display = "block";
+        if (formLogin) formLogin.style.display = "none";
+      }
+    }
+
+
     
     // ----------------------------------------------------
     // כתובת שרת הגיבוי החדש (Cloudflare Worker)
@@ -2200,7 +2289,7 @@
         text.innerText = "אופליין (מקומי)";
       } else {
         dot.className = "sync-dot";
-        text.innerText = "מאובטח ומסונכרן";
+        text.innerText = "מחובר ומסונכרן לענן";
       }
     }
 
@@ -2522,6 +2611,7 @@
     // מעבר בין מסכים ראשיים
     function showScreen(screenId) {
       if (screenId === "dashboardScreen") closeAuthModal();
+      if (screenId === "dashboardScreen") closeAuthModal();
       document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
       document.getElementById(screenId).classList.add("active");
     }
@@ -2589,7 +2679,7 @@
         const btn = document.getElementById("toggleBackupCodesBtn");
         backupCodesExpanded = true;
         container.style.display = "flex";
-        btn.querySelector("span").innerText = "➖ הסתרת קודי גיבוי לחשבון (אופציונלי)";
+        btn.querySelector("span").innerText = "הסתרת קודי גיבוי לחשבון";
         
         for (let i = 1; i <= 10; i++) {
           const input = document.getElementById(`backupCode${i}`);
@@ -3146,23 +3236,34 @@
     // החלפת כרטיסיות בלוח הניהול
     function switchTab(tab) {
       currentTab = tab;
-      document.querySelectorAll(".nav-tab-btn").forEach(btn => btn.classList.remove("active"));
       
-      document.getElementById("accountsView").style.display = "none";
-      document.getElementById("settingsView").classList.remove("active");
-      document.getElementById("guideView").style.display = "none";
+      // איפוס הדגשת הטאב בסרגל הצד
+      document.querySelectorAll(".nav-tab-item").forEach(btn => btn.classList.remove("active"));
+      
+      // הסתרת כל התצוגות
+      const accView = document.getElementById("accountsView");
+      const setView = document.getElementById("settingsView");
+      const guiView = document.getElementById("guideView");
+      
+      if (accView) accView.style.display = "none";
+      if (setView) setView.style.display = "none";
+      if (guiView) guiView.style.display = "none";
       
       if (tab === 'accounts') {
-        document.getElementById("tabBtnAccounts").classList.add("active");
-        document.getElementById("accountsView").style.display = "flex";
+        const btn = document.getElementById("tabBtnAccounts");
+        if (btn) btn.classList.add("active");
+        if (accView) accView.style.display = "block";
         renderAccounts();
+        updateCodesDisplay();
       } else if (tab === 'settings') {
-        document.getElementById("tabBtnSettings").classList.add("active");
-        document.getElementById("settingsView").classList.add("active");
+        const btn = document.getElementById("tabBtnSettings");
+        if (btn) btn.classList.add("active");
+        if (setView) setView.style.display = "block";
         loadSettingsData();
       } else if (tab === 'guide') {
-        document.getElementById("tabBtnGuide").classList.add("active");
-        document.getElementById("guideView").style.display = "flex";
+        const btn = document.getElementById("tabBtnGuide");
+        if (btn) btn.classList.add("active");
+        if (guiView) guiView.style.display = "block";
       }
     }
 
@@ -3177,8 +3278,8 @@
       const circumference = 2 * Math.PI * radius; // ~94.24
       const offset = circumference - (remainingSeconds / 30) * circumference;
       
-      let strokeColor = "var(--color-success)";
-      if (remainingSeconds <= 15 && remainingSeconds > 5) {
+      let strokeColor = "var(--color-primary)";
+      if (remainingSeconds <= 10 && remainingSeconds > 5) {
         strokeColor = "var(--color-warning)";
       } else if (remainingSeconds <= 5) {
         strokeColor = "var(--color-danger)";
@@ -3188,17 +3289,17 @@
         const card = document.getElementById(`accCard_${acc.id}`);
         if (!card) return;
         
-        const codeElement = card.querySelector(".totp-code");
+        const codeElement = card.querySelector(".totp-code-text");
         if (codeElement) {
           const currentOtp = generateTotp(acc.secret);
-          const formattedCode = currentOtp.slice(0, 3) + " " + currentOtp.slice(3);
-          if (codeElement.innerText.replace(/\s/g, '') !== currentOtp) {
+          const formattedCode = (currentOtp.length === 6) ? currentOtp.slice(0, 3) + " " + currentOtp.slice(3) : currentOtp;
+          if (codeElement.innerText !== formattedCode) {
             codeElement.innerText = formattedCode;
           }
         }
         
-        const timerCircle = card.querySelector(".timer-circle");
-        const timerText = card.querySelector(".timer-text");
+        const timerCircle = card.querySelector(".timer-bar-circle");
+        const timerText = card.querySelector(".timer-seconds-num");
         
         if (timerCircle) {
           timerCircle.style.strokeDasharray = `${circumference} ${circumference}`;
@@ -3259,7 +3360,7 @@
             const isUsed = codeObj.used ? "used" : "";
             return `
               <div class="backup-code-pill ${isUsed}" id="backup_${acc.id}_${index}">
-                <span>${codeObj.code}</span>
+                <span class="backup-code-text">${codeObj.code}</span>
                 <div class="backup-code-actions">
                   <button class="btn-code-action" onclick="toggleBackupCodeUsed('${acc.id}', ${index})" title="${codeObj.used ? 'סמן כלא משומש' : 'סמן כמשומש'}">
                     <svg class="icon icon-sm" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
@@ -3293,7 +3394,7 @@
           </div>
           
           <div class="totp-display-box" onclick="copyCurrentOtp('${acc.id}')" title="לחץ להעתקת קוד האימות">
-            <span class="totp-code-text">000 000</span>
+            <span class="totp-code-text">--- ---</span>
             
             <div class="timer-badge-container">
               <svg class="timer-svg">
@@ -3406,7 +3507,7 @@
         btn.querySelector("span").innerText = "➖ הסתרת קודי גיבוי לחשבון (אופציונלי)";
       } else {
         container.style.display = "none";
-        btn.querySelector("span").innerText = "➕ הוספת 10 קודי גיבוי לחשבון (אופציונלי)";
+        btn.querySelector("span").innerText = "הוספת 10 קודי גיבוי לחשבון (אופציונלי)";
       }
     }
     
@@ -3422,7 +3523,7 @@
       document.getElementById("modalTitle").innerText = "הוספת חשבון גוגל חדש";
       document.getElementById("accountForm").reset();
       document.getElementById("accountEditId").value = "";
-      document.getElementById("modalSubmitBtn").innerText = "שמור חשבון ✨";
+      document.getElementById("modalSubmitBtn").innerText = "שמור חשבון";
       
       resetBackupCodesInput();
       showModalGuide("welcome"); // הצגת הסבר ברוכים הבאים
@@ -3975,6 +4076,7 @@
         });
       }
     }
+  
   
   </script>
 </body>
