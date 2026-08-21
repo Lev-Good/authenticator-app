@@ -1154,6 +1154,12 @@
       overflow-y: auto;
       max-height: 75vh;
     }
+    .modal-guide-step {
+      display: none;
+    }
+    .modal-guide-step.active {
+      display: block;
+    }
     .ss-tabs {
       display: flex;
       flex-wrap: wrap;
@@ -1761,7 +1767,7 @@
             <label for="accName">שם החשבון (למשל: חשבון 1 / עבודה):</label>
             <div class="input-wrapper">
               <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>
-              <input type="text" id="accName" class="form-control" placeholder="הקלד שם מזהה..." required>
+              <input type="text" id="accName" class="form-control" placeholder="הקלד שם מזהה..." required onfocus="showModalGuide('name')">
             </div>
           </div>
 
@@ -1769,7 +1775,7 @@
             <label for="accEmail">כתובת אימייל (אופציונלי):</label>
             <div class="input-wrapper">
               <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              <input type="email" id="accEmail" class="form-control" placeholder="username@gmail.com">
+              <input type="email" id="accEmail" class="form-control" placeholder="username@gmail.com" onfocus="showModalGuide('name')">
             </div>
           </div>
 
@@ -1778,7 +1784,7 @@
             <div style="display: flex; gap: 8px; align-items: center;">
               <div class="input-wrapper" style="flex: 1;">
                 <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><path d="m21 2-2 2m-1.5 1.5L13 10l-4-4-5.5 5.5a4.95 4.95 0 1 0 7 7L16 13l4.5-4.5M16 8l2 2"/></svg>
-                <input type="text" id="accSecret" class="form-control" placeholder="הדבק את המפתח הסודי מגוגל..." required pattern="^[a-zA-Z2-7\s=]+$">
+                <input type="text" id="accSecret" class="form-control" placeholder="הדבק את המפתח הסודי מגוגל..." required pattern="^[a-zA-Z2-7\s=]+$" onfocus="showModalGuide('secret')">
               </div>
               <button type="button" class="btn btn-secondary btn-sm" onclick="openQrScanner()" title="סרוק קוד QR או העלה תמונה">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
@@ -1789,7 +1795,7 @@
 
           <div class="form-group">
             <label for="accNotes">הערות לחשבון:</label>
-            <textarea id="accNotes" class="form-control" style="padding: 10px 12px; resize: vertical;" rows="2" placeholder="הערות אישיות (שלוחה טלפונית, שאלות אבטחה וכד')..."></textarea>
+            <textarea id="accNotes" class="form-control" style="padding: 10px 12px; resize: vertical;" rows="2" placeholder="הערות אישיות (שלוחה טלפונית, שאלות אבטחה וכד')..." onfocus="showModalGuide('notes')"></textarea>
           </div>
 
           <button type="button" class="btn btn-secondary btn-sm" id="toggleBackupCodesBtn" onclick="toggleBackupCodesInput()" style="width: 100%; margin-bottom: 12px;">
@@ -1808,16 +1814,16 @@
             </div>
 
             <div class="backup-codes-inputs-grid">
-              <input type="text" id="backupCode1" placeholder="קוד 1" maxlength="11">
-              <input type="text" id="backupCode2" placeholder="קוד 2" maxlength="11">
-              <input type="text" id="backupCode3" placeholder="קוד 3" maxlength="11">
-              <input type="text" id="backupCode4" placeholder="קוד 4" maxlength="11">
-              <input type="text" id="backupCode5" placeholder="קוד 5" maxlength="11">
-              <input type="text" id="backupCode6" placeholder="קוד 6" maxlength="11">
-              <input type="text" id="backupCode7" placeholder="קוד 7" maxlength="11">
-              <input type="text" id="backupCode8" placeholder="קוד 8" maxlength="11">
-              <input type="text" id="backupCode9" placeholder="קוד 9" maxlength="11">
-              <input type="text" id="backupCode10" placeholder="קוד 10" maxlength="11">
+              <input type="text" id="backupCode1" placeholder="קוד 1" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode2" placeholder="קוד 2" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode3" placeholder="קוד 3" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode4" placeholder="קוד 4" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode5" placeholder="קוד 5" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode6" placeholder="קוד 6" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode7" placeholder="קוד 7" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode8" placeholder="קוד 8" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode9" placeholder="קוד 9" maxlength="11" onfocus="showModalGuide('backup')">
+              <input type="text" id="backupCode10" placeholder="קוד 10" maxlength="11" onfocus="showModalGuide('backup')">
             </div>
           </div>
 
@@ -1836,14 +1842,14 @@
             </p>
           </div>
 
-          <div class="modal-guide-step" id="modalGuide_name" style="display: none;">
+          <div class="modal-guide-step" id="modalGuide_name">
             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">שם החשבון ואימייל</h4>
             <p class="input-help" style="font-size: 13px; line-height: 1.55;">
               בחר שם קצר ומזהה (למשל "חשבון 1" או "אימייל עבודה") כדי למצוא אותו בקלות בלוח הבקרה.
             </p>
           </div>
 
-          <div class="modal-guide-step" id="modalGuide_secret" style="display: none;">
+          <div class="modal-guide-step" id="modalGuide_secret">
             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">קבלת מפתח האימות מגוגל</h4>
             <div class="ss-tabs">
               <button type="button" class="ss-tab active" onclick="switchSSTab(this, 'sec_ss1')">1. אימות דו-שלבי</button>
@@ -1882,14 +1888,14 @@
             </div>
           </div>
 
-          <div class="modal-guide-step" id="modalGuide_notes" style="display: none;">
+          <div class="modal-guide-step" id="modalGuide_notes">
             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">הערות חופשיות</h4>
             <p class="input-help" style="font-size: 13px; line-height: 1.55;">
               כאן תוכל לשמור הערות פנימיות כמו שלוחה טלפונית, שאלות אבטחה וכדומה.
             </p>
           </div>
 
-          <div class="modal-guide-step" id="modalGuide_backup" style="display: none;">
+          <div class="modal-guide-step" id="modalGuide_backup">
             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">קודי גיבוי חירום</h4>
             <div class="ss-tabs">
               <button type="button" class="ss-tab active" onclick="switchSSTab(this, 'back_ss1')">1. כניסה</button>
@@ -2630,23 +2636,38 @@
 
     // קישור מאזינים להדרכה דינמית בטופס
     function initModalGuideListeners() {
-      document.getElementById("accName").addEventListener("focus", () => showModalGuide("name"));
-      document.getElementById("accEmail").addEventListener("focus", () => showModalGuide("name"));
-      document.getElementById("accSecret").addEventListener("focus", () => showModalGuide("secret"));
-      document.getElementById("accNotes").addEventListener("focus", () => showModalGuide("notes"));
+      const inputs = [
+        { id: "accName", step: "name" },
+        { id: "accEmail", step: "name" },
+        { id: "accSecret", step: "secret" },
+        { id: "accNotes", step: "notes" },
+      ];
+      inputs.forEach(item => {
+        const el = document.getElementById(item.id);
+        if (el) {
+          el.addEventListener("focus", () => showModalGuide(item.step));
+          el.addEventListener("click", () => showModalGuide(item.step));
+        }
+      });
       
       for (let i = 1; i <= 10; i++) {
-        document.getElementById(`backupCode${i}`).addEventListener("focus", () => showModalGuide("backup"));
+        const el = document.getElementById(`backupCode${i}`);
+        if (el) {
+          el.addEventListener("focus", () => showModalGuide("backup"));
+          el.addEventListener("click", () => showModalGuide("backup"));
+        }
       }
     }
 
     // שינוי הדרכה פעילה במודל
     function showModalGuide(stepKey) {
       document.querySelectorAll(".modal-guide-step").forEach(step => {
+        step.style.display = "none";
         step.classList.remove("active");
       });
       const targetStep = document.getElementById(`modalGuide_${stepKey}`);
       if (targetStep) {
+        targetStep.style.display = "block";
         targetStep.classList.add("active");
       }
     }
