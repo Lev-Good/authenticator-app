@@ -2194,7 +2194,8 @@
       try {
         const vault = cached.vault;
         const salt = new Uint8Array(atob(vault.Salt).split("").map(c => c.charCodeAt(0)));
-        const key = await deriveKey(password, salt);
+        const iters = vault.Iterations || 100000;
+        const key = await deriveKey(password, salt, iters);
         const tokenDecrypted = await decryptText(
           vault.VerificationTokenEncrypted,
           vault.VerificationTokenIv,
@@ -2446,9 +2447,30 @@
     // ----------------------------------------------------
     // ג. מנגנון הצפנה מאובטח ברמת לקוח (PBKDF2 + AES-GCM)
     // ----------------------------------------------------
+
+    // בדיקת חוזק סיסמת מאסטר
+    function validatePasswordStrength(password) {
+      if (!password || password.length < 12) {
+        return { valid: false, message: "סיסמת המאסטר חייבת להכיל לפחות 12 תווים למען אבטחה מקסימלית." };
+      }
+      let hasLetter = false;
+      let hasDigitOrSymbol = false;
+      for (let i = 0; i < password.length; i++) {
+        const c = password[i];
+        if (/[a-zA-Z\u0590-\u05FF]/.test(c)) {
+          hasLetter = true;
+        } else {
+          hasDigitOrSymbol = true;
+        }
+      }
+      if (!hasLetter || !hasDigitOrSymbol) {
+        return { valid: false, message: "הסיסמה חייבת לשלב אותיות יחד עם ספרות או סימנים מיוחדים." };
+      }
+      return { valid: true };
+    }
     
     // יצירת מפתח AES מתוך סיסמה ומלח (Salt)
-    async function deriveKey(password, salt) {
+    async function deriveKey(password, salt, iterations = 100000) {
       const enc = new TextEncoder();
       const passwordKey = await window.crypto.subtle.importKey(
         "raw",
@@ -2461,7 +2483,7 @@
         {
           name: "PBKDF2",
           salt: salt,
-          iterations: 100000,
+          iterations: iterations || 100000,
           hash: "SHA-256"
         },
         passwordKey,
@@ -2522,12 +2544,14 @@
     // אתחול כספת מוצפנת חדשה
     async function initializeNewVault(password, email) {
       const salt = window.crypto.getRandomValues(new Uint8Array(16));
-      const key = await deriveKey(password, salt);
+      const iterations = 600000;
+      const key = await deriveKey(password, salt, iterations);
       
       const tokenEnc = await encryptText("AUTHENTICATED", key);
       const accountsEnc = await encryptText(JSON.stringify([]), key);
       
       return {
+        Iterations: iterations,
         Salt: btoa(String.fromCharCode(...salt)),
         VerificationTokenEncrypted: tokenEnc.ciphertext,
         VerificationTokenIv: tokenEnc.iv,
@@ -2773,7 +2797,8 @@
           const cachedIsPreferred = localCache && localCache.pendingSync && localCache.vault;
           const vault = cachedIsPreferred ? localCache.vault : JSON.parse(result.vault);
           const salt = new Uint8Array(atob(vault.Salt).split("").map(c => c.charCodeAt(0)));
-          const key = await deriveKey(password, salt);
+          const iters = vault.Iterations || 100000;
+          const key = await deriveKey(password, salt, iters);
           
           try {
             const tokenDecrypted = await decryptText(
@@ -2823,6 +2848,11 @@
           // מייל לא רשום
           const registerResult = confirm(`כתובת האימייל ${email} אינה רשומה בענן.\n\nהאם ברצונך ליצור כספת מאובטחת חדשה עבור אימייל זה עם הסיסמה שהזנת?`);
           if (registerResult) {
+            const strength = validatePasswordStrength(password);
+            if (!strength.valid) {
+              showToast(strength.message, "error");
+              return;
+            }
             const confirmP = prompt("אנא הקלד שוב את סיסמת המאסטר שקבעת לצורך אימות:");
             if (!confirmP) return;
             if (password !== confirmP) {
@@ -2853,7 +2883,8 @@
             const saveRes = await saveResp.json();
             
             if (saveRes && saveRes.success) {
-              sessionKey = await deriveKey(password, new Uint8Array(atob(newVault.Salt).split("").map(c => c.charCodeAt(0))));
+              const iters = newVault.Iterations || 600000;
+              sessionKey = await deriveKey(password, new Uint8Array(atob(newVault.Salt).split("").map(c => c.charCodeAt(0))), iters);
               currentVault = newVault;
               currentEmail = email;
               currentPasswordHash = pHash;
@@ -2996,8 +3027,9 @@
         showToast("הזן את מפתח השחזור שקיבלת במייל.", "error");
         return;
       }
-      if (!newPassword || newPassword.length < 4) {
-        showToast("הסיסמה חייבת להיות באורך 4 תווים לפחות.", "error");
+      const strength = validatePasswordStrength(newPassword);
+      if (!strength.valid) {
+        showToast(strength.message, "error");
         return;
       }
       if (newPassword !== confirmPassword) {
@@ -3030,7 +3062,7 @@
         const recovered = JSON.parse(recoveredJson);
         const newVault = await initializeNewVault(newPassword, email);
         const newSalt = new Uint8Array(atob(newVault.Salt).split("").map(c => c.charCodeAt(0)));
-        const newSessionKey = await deriveKey(newPassword, newSalt);
+        const newSessionKey = await deriveKey(newPassword, newSalt, newVault.Iterations || 600000);
         const encryptedAccounts = await encryptText(JSON.stringify(recovered.accounts || []), newSessionKey);
         newVault.AccountsEncrypted = encryptedAccounts.ciphertext;
         newVault.AccountsIv = encryptedAccounts.iv;
@@ -3688,14 +3720,16 @@
         return;
       }
       
-      if (newP.length < 4) {
-        showToast("הסיסמה החדשה חייבת להיות באורך 4 תווים לפחות!", "error");
+      const strength = validatePasswordStrength(newP);
+      if (!strength.valid) {
+        showToast(strength.message, "error");
         return;
       }
       
       try {
         const salt = new Uint8Array(atob(currentVault.Salt).split("").map(c => c.charCodeAt(0)));
-        const oldKeyCheck = await deriveKey(oldP, salt);
+        const oldIters = currentVault.Iterations || 100000;
+        const oldKeyCheck = await deriveKey(oldP, salt, oldIters);
         
         const tokenDec = await decryptText(
           currentVault.VerificationTokenEncrypted,
@@ -3712,11 +3746,13 @@
         showToast("מצפין מחדש את הכספת... נא להמתין", "warning");
         
         const newSalt = window.crypto.getRandomValues(new Uint8Array(16));
-        const newKey = await deriveKey(newP, newSalt);
+        const newIters = 600000;
+        const newKey = await deriveKey(newP, newSalt, newIters);
         
         const tokenEnc = await encryptText("AUTHENTICATED", newKey);
         const accountsEnc = await encryptText(JSON.stringify(accounts), newKey);
         
+        currentVault.Iterations = newIters;
         currentVault.Salt = btoa(String.fromCharCode(...newSalt));
         currentVault.VerificationTokenEncrypted = tokenEnc.ciphertext;
         currentVault.VerificationTokenIv = tokenEnc.iv;
@@ -3783,7 +3819,8 @@
           if (!backupPassword) return;
           
           const salt = new Uint8Array(atob(data.Salt).split("").map(c => c.charCodeAt(0)));
-          const key = await deriveKey(backupPassword, salt);
+          const iters = data.Iterations || 100000;
+          const key = await deriveKey(backupPassword, salt, iters);
           
           try {
             const tokenDec = await decryptText(

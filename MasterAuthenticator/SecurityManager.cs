@@ -37,6 +37,7 @@ namespace MasterAuthenticator
 
     public class VaultData
     {
+        public int Iterations { get; set; } = 100000;
         public string Salt { get; set; } = "";
         public string VerificationTokenEncrypted { get; set; } = "";
         public string VerificationTokenIv { get; set; } = "";
@@ -60,6 +61,9 @@ namespace MasterAuthenticator
             public bool PendingSync { get; set; }
         }
 
+        public const int ModernIterations = 600000;
+        public const int LegacyIterations = 100000;
+
         private byte[]? _cachedKey = null;
         private VaultData _currentVault = new VaultData();
         private List<GoogleAccount> _cachedAccounts = new List<GoogleAccount>();
@@ -72,12 +76,39 @@ namespace MasterAuthenticator
             return _cachedKey != null;
         }
 
+        public static bool ValidatePasswordStrength(string password, out string errorMessage)
+        {
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 12)
+            {
+                errorMessage = "סיסמת המאסטר חייבת להכיל לפחות 12 תווים למען אבטחה מקסימלית.";
+                return false;
+            }
+
+            bool hasLetter = false;
+            bool hasDigitOrSymbol = false;
+            foreach (char c in password)
+            {
+                if (char.IsLetter(c)) hasLetter = true;
+                else hasDigitOrSymbol = true;
+            }
+
+            if (!hasLetter || !hasDigitOrSymbol)
+            {
+                errorMessage = "הסיסמה חייבת לשלב אותיות יחד עם ספרות או סימנים מיוחדים.";
+                return false;
+            }
+
+            errorMessage = "";
+            return true;
+        }
+
         public string InitializeNewVault(string password, string email)
         {
             byte[] salt = new byte[16];
             RandomNumberGenerator.Fill(salt);
 
-            byte[] key = DeriveKey(password, salt);
+            int iterations = ModernIterations;
+            byte[] key = DeriveKey(password, salt, iterations);
             _cachedKey = key;
 
             // Encrypt verification token "AUTHENTICATED"
@@ -88,6 +119,7 @@ namespace MasterAuthenticator
 
             _currentVault = new VaultData
             {
+                Iterations = iterations,
                 Salt = Convert.ToBase64String(salt),
                 VerificationTokenEncrypted = Convert.ToBase64String(tokenEnc),
                 VerificationTokenIv = Convert.ToBase64String(tokenIv),
@@ -113,7 +145,8 @@ namespace MasterAuthenticator
                 if (vault == null) return false;
 
                 byte[] salt = Convert.FromBase64String(vault.Salt);
-                byte[] key = DeriveKey(password, salt);
+                int iterations = vault.Iterations > 0 ? vault.Iterations : LegacyIterations;
+                byte[] key = DeriveKey(password, salt, iterations);
 
                 byte[] tokenEnc = Convert.FromBase64String(vault.VerificationTokenEncrypted);
                 byte[] tokenIv = Convert.FromBase64String(vault.VerificationTokenIv);
@@ -180,17 +213,19 @@ namespace MasterAuthenticator
             {
                 // Verify old password
                 byte[] salt = Convert.FromBase64String(_currentVault.Salt);
-                byte[] oldKeyCheck = DeriveKey(oldPassword, salt);
+                int oldIterations = _currentVault.Iterations > 0 ? _currentVault.Iterations : LegacyIterations;
+                byte[] oldKeyCheck = DeriveKey(oldPassword, salt, oldIterations);
 
                 if (!CryptographicOperations.FixedTimeEquals(_cachedKey, oldKeyCheck))
                 {
                     return false;
                 }
 
-                // Generate new salt and key
+                // Generate new salt and key with ModernIterations (600,000)
                 byte[] newSalt = new byte[16];
                 RandomNumberGenerator.Fill(newSalt);
-                byte[] newKey = DeriveKey(newPassword, newSalt);
+                int newIterations = ModernIterations;
+                byte[] newKey = DeriveKey(newPassword, newSalt, newIterations);
 
                 // Re-encrypt verification token
                 var (tokenEnc, tokenIv, tokenTag) = Encrypt("AUTHENTICATED", newKey);
@@ -200,6 +235,7 @@ namespace MasterAuthenticator
                 var (accountsEnc, accountsIv, accountsTag) = Encrypt(accountsJson, newKey);
 
                 // Update current vault
+                _currentVault.Iterations = newIterations;
                 _currentVault.Salt = Convert.ToBase64String(newSalt);
                 _currentVault.VerificationTokenEncrypted = Convert.ToBase64String(tokenEnc);
                 _currentVault.VerificationTokenIv = Convert.ToBase64String(tokenIv);
@@ -208,6 +244,10 @@ namespace MasterAuthenticator
                 _currentVault.AccountsIv = Convert.ToBase64String(accountsIv);
                 _currentVault.AccountsTag = Convert.ToBase64String(accountsTag);
 
+                if (_cachedKey != null)
+                {
+                    CryptographicOperations.ZeroMemory(_cachedKey);
+                }
                 _cachedKey = newKey;
                 return true;
             }
@@ -219,7 +259,11 @@ namespace MasterAuthenticator
 
         public void Lock()
         {
-            _cachedKey = null;
+            if (_cachedKey != null)
+            {
+                CryptographicOperations.ZeroMemory(_cachedKey);
+                _cachedKey = null;
+            }
             _cachedAccounts = new List<GoogleAccount>();
             _currentVault = new VaultData();
         }
@@ -286,13 +330,15 @@ namespace MasterAuthenticator
 
                 byte[] salt = new byte[16];
                 RandomNumberGenerator.Fill(salt);
-                byte[] key = DeriveKey(newPassword, salt);
+                int iterations = ModernIterations;
+                byte[] key = DeriveKey(newPassword, salt, iterations);
                 var token = Encrypt("AUTHENTICATED", key);
                 var accountsEncrypted = Encrypt(JsonSerializer.Serialize(accounts), key);
                 var recoveryKeyEncrypted = Encrypt(recoveryKeyRaw.Trim(), key);
 
                 _currentVault = new VaultData
                 {
+                    Iterations = iterations,
                     Salt = Convert.ToBase64String(salt),
                     VerificationTokenEncrypted = Convert.ToBase64String(token.ciphertext),
                     VerificationTokenIv = Convert.ToBase64String(token.iv),
@@ -468,7 +514,8 @@ namespace MasterAuthenticator
                 }
 
                 byte[] salt = Convert.FromBase64String(data.Salt);
-                byte[] key = DeriveKey(password, salt);
+                int iterations = data.Iterations > 0 ? data.Iterations : LegacyIterations;
+                byte[] key = DeriveKey(password, salt, iterations);
 
                 byte[] tokenEnc = Convert.FromBase64String(data.VerificationTokenEncrypted);
                 byte[] tokenIv = Convert.FromBase64String(data.VerificationTokenIv);
@@ -500,9 +547,9 @@ namespace MasterAuthenticator
 
 
         // Encryption Helpers
-        private static byte[] DeriveKey(string password, byte[] salt)
+        private static byte[] DeriveKey(string password, byte[] salt, int iterations = LegacyIterations)
         {
-            using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 100000, HashAlgorithmName.SHA256))
+            using (var pbkdf2 = new Rfc2898DeriveBytes(password, salt, iterations, HashAlgorithmName.SHA256))
             {
                 return pbkdf2.GetBytes(32); // 256-bit key
             }

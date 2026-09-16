@@ -284,6 +284,12 @@ namespace MasterAuthenticator
 
                     if (registerResult)
                     {
+                        if (!SecurityManager.ValidatePasswordStrength(password, out string strengthError))
+                        {
+                            ShowToast(strengthError, true);
+                            return;
+                        }
+
                         // Confirm password to prevent typos
                         string confirmPassword = AskUserPasswordCustomDialog("אימות סיסמה מחדש", "אנא הקלד שוב את סיסמת המאסטר שקבעת לצורך אימות:", "אישור 🔑");
                         if (string.IsNullOrEmpty(confirmPassword))
@@ -379,6 +385,12 @@ namespace MasterAuthenticator
                 true,
                 "📴");
             if (!createLocal) return;
+
+            if (!SecurityManager.ValidatePasswordStrength(password, out string strengthError))
+            {
+                ShowToast(strengthError, true);
+                return;
+            }
 
             string confirmPassword = AskUserPasswordCustomDialog("אימות סיסמה מחדש", "אנא הקלד שוב את סיסמת המאסטר שקבעת לצורך אימות:", "צור כספת 🔑");
             if (string.IsNullOrEmpty(confirmPassword)) return;
@@ -1023,9 +1035,9 @@ namespace MasterAuthenticator
                 return;
             }
 
-            if (newP.Length < 4)
+            if (!SecurityManager.ValidatePasswordStrength(newP, out string strengthError))
             {
-                ShowToast("הסיסמה החדשה חייבת להיות באורך 4 תווים לפחות!", true);
+                ShowToast(strengthError, true);
                 return;
             }
 
