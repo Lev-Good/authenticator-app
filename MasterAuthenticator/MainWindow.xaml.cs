@@ -1051,8 +1051,9 @@ namespace MasterAuthenticator
                 
                 ShowToast("סיסמת המאסטר שונתה בהצלחה!", false);
 
+                string oldAuthHash = HashPassword(oldP);
                 // Sync the re-encrypted vault and the new password hash to the cloud!
-                await SyncVaultToCloudAsync();
+                await SyncVaultToCloudAsync(oldAuthHash);
             }
             else
             {
@@ -1156,7 +1157,7 @@ namespace MasterAuthenticator
         // ----------------------------------------------------
         // Sync & Badge logic
         // ----------------------------------------------------
-        private async Task<bool> SyncVaultToCloudAsync()
+        private async Task<bool> SyncVaultToCloudAsync(string? oldAuthHash = null)
         {
             // במצב אופליין אין שום קשר עם השרת — הכספת נשמרת מקומית בלבד
             if (_security.IsOfflineMode)
@@ -1192,6 +1193,7 @@ namespace MasterAuthenticator
                     action = "save_vault",
                     email = email,
                     password = _currentPasswordHash,
+                    authHash = oldAuthHash ?? _currentPasswordHash,
                     vault = vaultJson,
                     recoveryKey = recovery.recoveryKey,
                     recoveryPackage = recovery.recoveryPackage,

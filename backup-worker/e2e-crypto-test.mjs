@@ -136,6 +136,7 @@ console.log("\n6) קצה-לקצה: כספת מוצפנת -> שרת HTTP אמית
     VAULT_KV: {
       async get(k, t) { const v = store.get(k); if (v === undefined) return null; return t === "json" ? JSON.parse(v) : v; },
       async put(k, v) { store.set(k, v); },
+      async delete(k) { store.delete(k); },
     },
   };
   const server = http.createServer(async (req, res) => {
@@ -162,7 +163,7 @@ console.log("\n6) קצה-לקצה: כספת מוצפנת -> שרת HTTP אמית
   const getRes = await fetch(base + "/", {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "get_vault", email }),
+    body: JSON.stringify({ action: "get_vault", email, password: pHash }),
   });
   const getJson = await getRes.json();
   check("שליפה: registered=true", getJson.registered === true);
@@ -213,9 +214,10 @@ console.log("\n8) חוזה פרוטוקול (מבנה תשובות כמו הסק
     VAULT_KV: {
       async get(k, t) { const v = store.get(k); if (v === undefined) return null; return t === "json" ? JSON.parse(v) : v; },
       async put(k, v) { store.set(k, v); },
+      async delete(k) { store.delete(k); },
     },
   };
-  const r1 = await worker.fetch(new Request("https://x/", { method: "POST", body: JSON.stringify({ action: "get_vault", email: "new@x.com" }) }), env);
+  const r1 = await worker.fetch(new Request("https://x/", { method: "POST", body: JSON.stringify({ action: "get_vault", email: "new@x.com", password: "h" }) }), env);
   const j1 = await r1.json();
   check("לא רשום: {success, registered:false} בלבד", j1.success === true && j1.registered === false && Object.keys(j1).sort().join(",") === "registered,success", JSON.stringify(j1));
 
@@ -223,7 +225,7 @@ console.log("\n8) חוזה פרוטוקול (מבנה תשובות כמו הסק
   const j2 = await r2.json();
   check("שמירה: {success, message, updatedAt}", j2.success === true && typeof j2.message === "string" && typeof j2.updatedAt === "string" && Object.keys(j2).sort().join(",") === "message,success,updatedAt", JSON.stringify(j2));
 
-  const r3 = await worker.fetch(new Request("https://x/", { method: "POST", body: JSON.stringify({ action: "get_vault", email: "new@x.com" }) }), env);
+  const r3 = await worker.fetch(new Request("https://x/", { method: "POST", body: JSON.stringify({ action: "get_vault", email: "new@x.com", password: "h" }) }), env);
   const j3 = await r3.json();
   // הערה: get_vault מחזיר גם updatedAt (לצורכי סינכרון ההגירה) - הלקוחות מתעלמים ממנו,
   // לכן הבדיקה בודקת רק את השדות החיוניים ולא שוויון מדויק של כל המפתחות.

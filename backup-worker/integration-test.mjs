@@ -104,7 +104,7 @@ console.log("--- בדיקות Wire: ללא Token ---");
   const r2 = await raw(base, "/", {
     method: "POST",
     headers: { "Content-Type": "application/json" }, // כמו שהדסקטופ שולח
-    body: JSON.stringify({ action: "get_vault", email: "user@example.com" }),
+    body: JSON.stringify({ action: "get_vault", email: "user@example.com", password: "hash" }),
   });
   check("get: registered=true", r2.body && r2.body.registered === true);
   check("get: vault שלם עם עברית ואמוג'י", r2.body && r2.body.vault === vault, JSON.stringify(r2.body && r2.body.vault));

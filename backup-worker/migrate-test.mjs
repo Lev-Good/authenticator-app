@@ -173,11 +173,11 @@ console.log("--- בדיקת הגירה: הגירה מלאה ---");
   check("הגירה: migrated=3", r.summary && r.summary.migrated === 3, JSON.stringify(r.summary));
   check("הגירה: failed=0", r.summary && r.summary.failed === 0, JSON.stringify(r.summary));
 
-  const a = await postTo(workerBase, { action: "get_vault", email: "avraham@example.com" }, "tok123");
-  const rv = await postTo(workerBase, { action: "get_vault", email: "rivka@example.com" }, "tok123");
-  const mo = await postTo(workerBase, { action: "get_vault", email: "moshe@example.com" }, "tok123");
-  const da = await postTo(workerBase, { action: "get_vault", email: "david@example.com" }, "tok123");
-  const sa = await postTo(workerBase, { action: "get_vault", email: "sarah@example.com" }, "tok123");
+  const a = await postTo(workerBase, { action: "get_vault", email: "avraham@example.com", password: "abc123" }, "tok123");
+  const rv = await postTo(workerBase, { action: "get_vault", email: "rivka@example.com", password: "def456" }, "tok123");
+  const mo = await postTo(workerBase, { action: "get_vault", email: "moshe@example.com", password: "mno111" }, "tok123");
+  const da = await postTo(workerBase, { action: "get_vault", email: "david@example.com", password: "ghi789" }, "tok123");
+  const sa = await postTo(workerBase, { action: "get_vault", email: "sarah@example.com", password: "jkl000" }, "tok123");
 
   check("avraham הועבר עם vault מלא", a.registered === true && a.vault.includes("vault-avraham"), JSON.stringify(a));
   check("קידומת P_ הוסרה (abc123)", store.has("avraham@example.com") && JSON.parse(store.get("avraham@example.com")).password === "abc123", store.get("avraham@example.com"));
@@ -204,7 +204,7 @@ console.log("--- תקופת מעבר כפולה: משתמש חדש-גרסה שו
   await postTo(workerBase, { action: "save_vault", email: "rivka@example.com", password: "def456", vault: JSON.stringify({ Salt: "s2", AccountsEncrypted: "vault-rivka-NEW" }) }, "tok123");
   const r = await runMigrate(oldBase, workerBase);
   check("סינכרון: rivka נדלגה (החדש חדש יותר)", r.summary && r.summary.skipped >= 1 && r.summary.migrated === 0, JSON.stringify(r.summary));
-  const rv = await postTo(workerBase, { action: "get_vault", email: "rivka@example.com" }, "tok123");
+  const rv = await postTo(workerBase, { action: "get_vault", email: "rivka@example.com", password: "def456" }, "tok123");
   check("הכספת החדשה של rivka לא נדרסה", rv.vault.includes("vault-rivka-NEW"), rv.vault);
 }
 
@@ -221,9 +221,9 @@ console.log("--- תקופת מעבר כפולה: משתמש ישן-גרסה מע
   });
   const r = await runMigrate(oldBase, workerBase);
   check("סינכרון: moshe הועבר (גרסת הגיליון חדשה יותר)", r.summary && r.summary.migrated === 1, JSON.stringify(r.summary));
-  const mo = await postTo(workerBase, { action: "get_vault", email: "moshe@example.com" }, "tok123");
+  const mo = await postTo(workerBase, { action: "get_vault", email: "moshe@example.com", password: "mno111" }, "tok123");
   check("הכספת המעודכנת של moshe ב-KV", mo.vault.includes("vault-moshe-V2"), mo.vault);
-  const rv = await postTo(workerBase, { action: "get_vault", email: "rivka@example.com" }, "tok123");
+  const rv = await postTo(workerBase, { action: "get_vault", email: "rivka@example.com", password: "def456" }, "tok123");
   check("rivka עדיין לא נדרסה", rv.vault.includes("vault-rivka-NEW"), rv.vault);
 }
 
@@ -232,7 +232,7 @@ console.log("--- בדיקת --email (משתמש בודד) ---");
   old.mutate((rows) => [...rows, { email: "newuser@example.com", password: "xyz789", vault: JSON.stringify({ Salt: "s9", AccountsEncrypted: "vault-newuser" }), updatedAt: "2026-08-10 09:00:00" }]);
   const r = await runMigrate(oldBase, workerBase, ["--email", "newuser@example.com"]);
   check("--email: רק המשתמש הנבחר הועבר (migrated=1)", r.summary && r.summary.migrated === 1 && r.summary.total === 1, JSON.stringify(r.summary));
-  const nu = await postTo(workerBase, { action: "get_vault", email: "newuser@example.com" }, "tok123");
+  const nu = await postTo(workerBase, { action: "get_vault", email: "newuser@example.com", password: "xyz789" }, "tok123");
   check("newuser נמצא ב-KV", nu.registered === true && nu.vault.includes("vault-newuser"), JSON.stringify(nu));
 
   const r2 = await runMigrate(oldBase, workerBase, ["--email", "unknown@example.com"]);

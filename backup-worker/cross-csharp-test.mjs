@@ -93,14 +93,15 @@ console.log("\nB) כספת מה-C# האמיתי נפענחת ע\"י הקריפט
 
   check("מבנה הכספת מ-C# תקין", vault.Salt && vault.VerificationTokenEncrypted && vault.AccountsEncrypted && vault.AccountsTag && vault.RecoveryEmail === email, JSON.stringify(Object.keys(vault)));
 
-  const key = await api.deriveKey(password, new Uint8Array(atob(vault.Salt).split("").map((c) => c.charCodeAt(0))));
+  const iters = vault.Iterations || 100000;
+  const key = await api.deriveKey(password, new Uint8Array(atob(vault.Salt).split("").map((c) => c.charCodeAt(0))), iters);
   const token = await api.decryptText(vault.VerificationTokenEncrypted, vault.VerificationTokenIv, vault.VerificationTokenTag, key);
   check("Token מ-C# = AUTHENTICATED", token === "AUTHENTICATED", token);
   const accounts = JSON.parse(await api.decryptText(vault.AccountsEncrypted, vault.AccountsIv, vault.AccountsTag, key));
   check("כספת חדשה מ-C# = אפס חשבונות", Array.isArray(accounts) && accounts.length === 0, JSON.stringify(accounts));
 
   // וסיסמה שגויה אמורה להיכשל בשני הכיוונים
-  const badKey = await api.deriveKey("wrong-pass", new Uint8Array(atob(vault.Salt).split("").map((c) => c.charCodeAt(0))));
+  const badKey = await api.deriveKey("wrong-pass", new Uint8Array(atob(vault.Salt).split("").map((c) => c.charCodeAt(0))), iters);
   let threw = false;
   try { await api.decryptText(vault.VerificationTokenEncrypted, vault.VerificationTokenIv, vault.VerificationTokenTag, badKey); } catch { threw = true; }
   check("סיסמה שגויה נדחית גם מצד ה-HTML", threw);

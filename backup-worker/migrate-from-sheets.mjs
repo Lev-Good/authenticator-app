@@ -344,7 +344,7 @@ async function main() {
 
     if (!FORCE) {
       try {
-        const existing = await postJson(TO_URL, { action: "get_vault", email: u.email }, TOKEN);
+        const existing = await postJson(TO_URL, { action: "get_vault", email: u.email, password: u.password }, TOKEN);
         kvRegistered = existing && existing.registered === true;
         if (kvRegistered && existing.updatedAt) {
           const t = Date.parse(existing.updatedAt);

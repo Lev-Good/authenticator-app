@@ -1,40 +1,40 @@
 /**
- * Master Authenticator - Cloudflare Worker Backup Server
- * ======================================================
- * שומר כספות מוצפנות ב-Cloudflare KV.
+ * Cloudflare Worker: שרת גיבוי מוצפן וכספת מרכזית (KV-backed)
+ * ==============================================================
+ * תואם מלא ל-API של הסקריפט הישן (Google Apps Script):
+ *   - get_vault: שליפת כספת מוצפנת לפי אימייל (מאומתת ע"י גיבוב סיסמה)
+ *   - save_vault: שמירת כספת מוצפנת בענן (מאומתת ע"י גיבוב סיסמה או טוקן איפוס)
+ *   - ping: בדיקת תקינות
+ *   - begin_recovery: שליחת קישור שחזור מאובטח במייל (מוגבל קצב)
+ *   - recover_vault: שליפת חבילת שחזור מוצפנת עם טוקן ומפתח
  *
- * פעולות:
- *   GET  ?action=ping
- *   POST { action: "get_vault", email }
- *   POST { action: "save_vault", email, password, vault, recoveryKey?, recoveryPackage?, resetToken? }
- *   POST { action: "begin_recovery", email }
- *   POST { action: "recover_vault", email, token, recoveryKey }
- *
- * recoveryKey אינו נשמר בתוך הכספת המוצפנת. הוא נשמר ב-KV לצורך שליחתו
- * במייל האיפוס דרך Apps Script. המשתמש לעולם אינו שולח את סיסמת המאסטר הישנה.
+ * אבטחה:
+ *   - אכיפת אימות מחמירה ללא תלות ב-clientVersion
+ *   - הגבלת קצב (Rate Limiting) על שחזור סיסמה וניסיונות אימות שגויים
+ *   - ביטול מיידי של קישורי איפוס קודמים
+ *   - הגבלת CORS לפי Origin מורשה
  */
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-};
 
 const MAX_VAULT_SIZE = 2 * 1024 * 1024;
 const MAX_RECOVERY_PACKAGE_SIZE = 4 * 1024 * 1024;
 const RESET_TOKEN_TTL_MS = 15 * 60 * 1000;
-const WORKER_VERSION = "recovery-relay-get-v3";
+const AUTH_LOCKOUT_MS = 15 * 60 * 1000;
+const MAX_AUTH_FAILURES = 5;
+const MAX_RECOVERY_ATTEMPTS = 3;
+const WORKER_VERSION = "recovery-relay-get-v4-hardened";
 const DEFAULT_LEGACY_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8HA3YCdesH9x3xDmE8ybUynTB-9yEYzJ7gCt5rShNmRBJgT29HLvszP0JE1L-5eRqGg/exec";
 
 export default {
   async fetch(request, env) {
+    const respond = (data, status = 200) => jsonResponse(data, status, request);
+
     if (request.method === "OPTIONS") {
-      return jsonResponse(null, 204);
+      return respond(null, 204);
     }
 
     try {
       if (!env.VAULT_KV) {
-        return jsonResponse({
+        return respond({
           success: false,
           message: "Server misconfigured: KV binding (VAULT_KV) is missing",
         }, 500);
@@ -53,26 +53,26 @@ export default {
         const url = new URL(request.url);
         for (const [key, value] of url.searchParams) params[key] = value;
       } else {
-        return jsonResponse({ success: false, message: "Method not allowed" }, 405);
+        return respond({ success: false, message: "Method not allowed" }, 405);
       }
 
       if (params === null || typeof params !== "object" || Array.isArray(params)) {
-        return jsonResponse({ success: false, message: "Invalid JSON body" }, 400);
+        return respond({ success: false, message: "Invalid JSON body" }, 400);
       }
 
       if (!isAuthorized(request, params, env)) {
-        return jsonResponse({ success: false, message: "Unauthorized" }, 401);
+        return respond({ success: false, message: "Unauthorized" }, 401);
       }
 
       const action = params.action;
       const email = params.email ? params.email.toString().trim().toLowerCase() : "";
 
       if (!action) {
-        return jsonResponse({ success: false, message: "Missing action parameter" });
+        return respond({ success: false, message: "Missing action parameter" });
       }
 
       if (action === "ping") {
-        return jsonResponse({
+        return respond({
           success: true,
           message: "Connection successful! Backup server is alive.",
           version: WORKER_VERSION,
@@ -81,19 +81,49 @@ export default {
 
       if (action === "get_vault") {
         if (!isValidEmail(email)) {
-          return jsonResponse({ success: false, message: "Valid email is required" });
+          return respond({ success: false, message: "Valid email is required" });
         }
 
         const stored = await env.VAULT_KV.get(email, "json");
-        if (!stored) return jsonResponse({ success: true, registered: false });
+        if (!stored) return respond({ success: true, registered: false });
 
-        const secureClient = params.clientVersion === "secure-v1";
-        const suppliedAuthHash = params.password ? params.password.toString().trim() : "";
-        if (secureClient && stored.secureAuthHash && !constantTimeEquals(suppliedAuthHash, stored.secureAuthHash)) {
-          return jsonResponse({ success: false, message: "Unauthorized" }, 401);
+        // בדיקת נעילה עקב ניסיונות אימות כושלים (Rate Limiting)
+        const failKey = "rl:fail:" + email;
+        const failRecord = await env.VAULT_KV.get(failKey, "json");
+        const now = Date.now();
+        if (failRecord && failRecord.lockedUntil && failRecord.lockedUntil > now) {
+          return respond({
+            success: false,
+            message: "יותר מדי ניסיונות אימות שגויים. החשבון נעול זמנית להגנה. אנא נסה שוב בעוד מספר דקות.",
+          }, 429);
         }
 
-        return jsonResponse({
+        const suppliedAuthHash = params.password ? params.password.toString().trim() : "";
+        const expectedAuthHash = (stored.secureAuthHash || stored.password || "").toString().trim();
+
+        if (expectedAuthHash) {
+          let authValid = constantTimeEquals(suppliedAuthHash, expectedAuthHash);
+          if (!authValid && stored.password) {
+            const hashedStored = await sha256Base64(stored.password);
+            if (constantTimeEquals(suppliedAuthHash, hashedStored)) {
+              authValid = true;
+            }
+          }
+
+          if (!authValid) {
+            const currentCount = (failRecord && failRecord.count ? failRecord.count : 0) + 1;
+            const lockedUntil = currentCount >= MAX_AUTH_FAILURES ? now + AUTH_LOCKOUT_MS : 0;
+            await env.VAULT_KV.put(failKey, JSON.stringify({ count: currentCount, lockedUntil }));
+            return respond({ success: false, message: "Unauthorized" }, 401);
+          }
+
+          // אימות הצליח - איפוס מונה כישלונות
+          if (failRecord) {
+            await kvDelete(env.VAULT_KV, failKey);
+          }
+        }
+
+        return respond({
           success: true,
           registered: true,
           vault: stored.vault ? stored.vault.toString() : "",
@@ -109,44 +139,57 @@ export default {
         const resetToken = params.resetToken ? params.resetToken.toString().trim() : "";
 
         if (!isValidEmail(email) || !password || !vault) {
-          return jsonResponse({
+          return respond({
             success: false,
             message: "Email, password and vault are required",
           });
         }
         if (vault.length > MAX_VAULT_SIZE) {
-          return jsonResponse({ success: false, message: "Vault too large" }, 413);
+          return respond({ success: false, message: "Vault too large" }, 413);
         }
         if (!isValidVault(vault)) {
-          return jsonResponse({
+          return respond({
             success: false,
             message: "Vault must be a valid JSON object",
           }, 400);
         }
         if (recoveryPackage && !isValidRecoveryPackage(recoveryPackage)) {
-          return jsonResponse({
+          return respond({
             success: false,
             message: "Recovery package is invalid",
           }, 400);
         }
         if (recoveryPackage && JSON.stringify(recoveryPackage).length > MAX_RECOVERY_PACKAGE_SIZE) {
-          return jsonResponse({ success: false, message: "Recovery package too large" }, 413);
+          return respond({ success: false, message: "Recovery package too large" }, 413);
         }
 
         let resetRecord = null;
         if (resetToken) {
           resetRecord = await getValidResetRecord(env, email, resetToken);
           if (!resetRecord) {
-            return jsonResponse({ success: false, message: "Reset link is invalid or expired" }, 401);
+            return respond({ success: false, message: "Reset link is invalid or expired" }, 401);
           }
         }
 
         const existing = await env.VAULT_KV.get(email, "json");
-        const secureClient = params.clientVersion === "secure-v1";
-        // קישור איפוס תקף מאשר את הכתיבה גם כשגיבוב הסיסמה החדש שונה
-        // מהגיבוב השמור; אחרת נאכוף את גיבוב האימות.
-        if (secureClient && !resetRecord && existing && existing.secureAuthHash && !constantTimeEquals(password, existing.secureAuthHash)) {
-          return jsonResponse({ success: false, message: "Unauthorized" }, 401);
+        const existingAuthHash = existing ? (existing.secureAuthHash || existing.password || "").toString().trim() : "";
+
+        // קישור איפוס תקף מאשר כתיבה גם כשגיבוב הסיסמה החדש שונה.
+        // אחרת - אם כבר קיימת כספת עם סיסמה/גיבוב, חובה לאמת.
+        if (!resetRecord && existing && existingAuthHash) {
+          // פרמטר authHash (או oldPassword) מאפשר שינוי סיסמה עבור משתמש מחובר
+          const suppliedAuth = (params.authHash || params.oldPassword || password).toString().trim();
+          let authValid = constantTimeEquals(suppliedAuth, existingAuthHash);
+          if (!authValid && existing.password) {
+            const hashedExisting = await sha256Base64(existing.password);
+            if (constantTimeEquals(suppliedAuth, hashedExisting)) {
+              authValid = true;
+            }
+          }
+
+          if (!authValid) {
+            return respond({ success: false, message: "Unauthorized" }, 401);
+          }
         }
 
         const now = new Date().toISOString();
@@ -154,19 +197,21 @@ export default {
           password,
           vault,
           updatedAt: now,
-          // Older clients do not send recovery data; preserve existing data.
           recoveryKey: recoveryKey || (existing && existing.recoveryKey) || "",
           recoveryPackage: recoveryPackage || (existing && existing.recoveryPackage) || null,
-          // New clients authenticate writes with the password hash; legacy clients remain compatible.
-          secureAuthHash: secureClient ? password : (existing && existing.secureAuthHash) || "",
+          secureAuthHash: password,
         };
 
         await env.VAULT_KV.put(email, JSON.stringify(stored));
         if (resetRecord) {
-          await env.VAULT_KV.delete(resetRecord.storageKey);
+          await kvDelete(env.VAULT_KV, resetRecord.storageKey);
+          await kvDelete(env.VAULT_KV, "last_reset:" + email);
         }
 
-        return jsonResponse({
+        // ניקוי מנעול שגיאות אימות אם היה קיים
+        await kvDelete(env.VAULT_KV, "rl:fail:" + email);
+
+        return respond({
           success: true,
           message: "הכספת סונכרנה בהצלחה בענן!",
           updatedAt: now,
@@ -175,28 +220,51 @@ export default {
 
       if (action === "begin_recovery") {
         if (!isValidEmail(email)) {
-          return jsonResponse({ success: false, message: "Valid email is required" }, 400);
+          return respond({ success: false, message: "Valid email is required" }, 400);
         }
         if (!env.LEGACY_SCRIPT_URL || !env.RECOVERY_RELAY_KEY) {
-          return jsonResponse({
+          return respond({
             success: false,
             message: "Recovery email relay is not configured",
           }, 503);
         }
 
+        // הגבלת קצב: עד 3 בקשות שחזור ב-15 דקות לכתובת אימייל
+        const rlKey = "rl:rec:" + email;
+        const rlData = await env.VAULT_KV.get(rlKey, "json");
+        const now = Date.now();
+        if (rlData && rlData.resetAt > now) {
+          if (rlData.count >= MAX_RECOVERY_ATTEMPTS) {
+            return respond({
+              success: false,
+              message: "חרגת ממספר בקשות השחזור המותרות. אנא נסה שוב בעוד מספר דקות.",
+            }, 429);
+          }
+          await env.VAULT_KV.put(rlKey, JSON.stringify({ count: rlData.count + 1, resetAt: rlData.resetAt }));
+        } else {
+          await env.VAULT_KV.put(rlKey, JSON.stringify({ count: 1, resetAt: now + RESET_TOKEN_TTL_MS }));
+        }
+
         const stored = await env.VAULT_KV.get(email, "json");
         // Do not reveal whether an email is registered or has recovery material.
         if (!stored || !stored.recoveryKey || !stored.recoveryPackage) {
-          return jsonResponse({
+          return respond({
             success: true,
             message: "אם הכתובת קיימת, נשלח אליה קישור שחזור.",
           });
         }
 
+        // ביטול קישורי שחזור פעילים קודמים לאותו אימייל
+        const lastResetKey = await env.VAULT_KV.get("last_reset:" + email);
+        if (lastResetKey) {
+          await kvDelete(env.VAULT_KV, lastResetKey);
+        }
+
         const token = randomToken();
         const storageKey = "reset:" + await sha256Hex(token);
-        const expiresAt = Date.now() + RESET_TOKEN_TTL_MS;
+        const expiresAt = now + RESET_TOKEN_TTL_MS;
         await env.VAULT_KV.put(storageKey, JSON.stringify({ email, expiresAt }));
+        await env.VAULT_KV.put("last_reset:" + email, storageKey);
 
         const resetBase = env.RESET_BASE_URL || "https://lev-good.github.io/authenticator-app/";
         const resetUrl = new URL(resetBase);
@@ -220,8 +288,6 @@ export default {
 
         for (const relayTarget of relayUrls) {
           try {
-            // Apps Script redirects POST requests to script.googleusercontent.com.
-            // Use its GET API directly so the action survives that redirect.
             const relayUrl = new URL(relayTarget);
             const relayMethod = relayUrl.hostname === "script.google.com" ? "GET" : "POST";
             const candidateResponse = await fetchRelay(relayUrl.toString(), relayPayload, 5, relayMethod);
@@ -237,8 +303,6 @@ export default {
             relayError = null;
             if (candidateResponse.ok && candidateResult && candidateResult.success === true) break;
 
-            // Retry only when the configured deployment is an older script that
-            // does not know the relay action. Do not duplicate real mail failures.
             const unsupportedAction = candidateResult && (
               candidateResult.message === "Unknown action: send_reset_link" ||
               candidateResult.message === "Missing action parameter"
@@ -250,8 +314,8 @@ export default {
         }
 
         if (!relayResponse || !relayResponse.ok || !relayResult || relayResult.success !== true) {
-          await env.VAULT_KV.delete(storageKey);
-          return jsonResponse({
+          await kvDelete(env.VAULT_KV, storageKey);
+          return respond({
             success: false,
             message: relayResult && relayResult.message
               ? relayResult.message
@@ -261,7 +325,7 @@ export default {
           }, 502);
         }
 
-        return jsonResponse({
+        return respond({
           success: true,
           message: "אם הכתובת קיימת, נשלח אליה קישור שחזור.",
         });
@@ -269,12 +333,12 @@ export default {
 
       if (action === "recover_vault") {
         if (!isValidEmail(email) || !params.token || !params.recoveryKey) {
-          return jsonResponse({ success: false, message: "Email, token and recovery key are required" }, 400);
+          return respond({ success: false, message: "Email, token and recovery key are required" }, 400);
         }
 
         const resetRecord = await getValidResetRecord(env, email, params.token.toString());
         if (!resetRecord) {
-          return jsonResponse({ success: false, message: "Reset link is invalid or expired" }, 401);
+          return respond({ success: false, message: "Reset link is invalid or expired" }, 401);
         }
 
         const stored = await env.VAULT_KV.get(email, "json");
@@ -282,24 +346,34 @@ export default {
           stored.recoveryKey,
           params.recoveryKey.toString().trim()
         )) {
-          return jsonResponse({ success: false, message: "Recovery key is invalid" }, 401);
+          return respond({ success: false, message: "Recovery key is invalid" }, 401);
         }
 
-        return jsonResponse({
+        return respond({
           success: true,
           recoveryPackage: stored.recoveryPackage,
         });
       }
 
-      return jsonResponse({ success: false, message: "Unknown action: " + action });
+      return respond({ success: false, message: "Unknown action: " + action });
     } catch (error) {
-      return jsonResponse({
+      console.error("Worker error:", error);
+      return respond({
         success: false,
-        message: "Server error: " + error.toString(),
+        message: "Internal server error",
       }, 500);
     }
   },
 };
+
+
+async function kvDelete(kv, key) {
+  if (kv && typeof kv.delete === "function") {
+    try {
+      await kv.delete(key);
+    } catch {}
+  }
+}
 
 async function fetchRelay(url, payload, redirectsLeft = 5, method = "POST") {
   const requestUrl = new URL(url);
@@ -377,7 +451,7 @@ async function getValidResetRecord(env, email, token) {
   const storageKey = "reset:" + await sha256Hex(token);
   const record = await env.VAULT_KV.get(storageKey, "json");
   if (!record || record.email !== email || !record.expiresAt || Date.now() > record.expiresAt) {
-    if (record) await env.VAULT_KV.delete(storageKey);
+    if (record) await kvDelete(env.VAULT_KV, storageKey);
     return null;
   }
   return { ...record, storageKey };
@@ -402,6 +476,15 @@ async function sha256Hex(value) {
     .join("");
 }
 
+async function sha256Base64(value) {
+  const bytes = new TextEncoder().encode(value);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  const arr = Array.from(new Uint8Array(hash));
+  let binary = "";
+  for (const b of arr) binary += String.fromCharCode(b);
+  return btoa(binary);
+}
+
 function constantTimeEquals(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;
   if (a.length !== b.length) return false;
@@ -410,14 +493,29 @@ function constantTimeEquals(a, b) {
   return diff === 0;
 }
 
-function jsonResponse(data, status = 200) {
+function jsonResponse(data, status = 200, request = null) {
+  const origin = request && request.headers ? request.headers.get("Origin") : null;
+  const allowedOrigins = [
+    "https://lev-good.github.io",
+    "http://localhost",
+    "http://127.0.0.1",
+  ];
+  let allowOrigin = "*";
+  if (origin) {
+    const isAllowed = allowedOrigins.some((ao) => origin === ao || origin.startsWith(ao + ":"));
+    allowOrigin = isAllowed ? origin : "https://lev-good.github.io";
+  }
+
   return new Response(data === null ? null : JSON.stringify(data), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
       "X-Content-Type-Options": "nosniff",
       "Cache-Control": "no-store",
-      ...CORS_HEADERS,
+      "Access-Control-Allow-Origin": allowOrigin,
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Vary": "Origin",
     },
   });
 }

@@ -18,6 +18,9 @@ function createEnv(apiToken) {
       async put(key, value) {
         store.set(key, value);
       },
+      async delete(key) {
+        store.delete(key);
+      },
     },
   };
   return { env, store };
@@ -82,7 +85,7 @@ console.log("3) save_vault ואז get_vault:");
   const r2 = await call(env, "/", {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "get_vault", email: "new@example.com" }), // אימייל באותיות קטנות
+    body: JSON.stringify({ action: "get_vault", email: "new@example.com", password: "hash123" }), // אימייל באותיות קטנות
   });
   check("registered=true", r2.body && r2.body.registered === true);
   check("vault תואם", r2.body && r2.body.vault === vault, JSON.stringify(r2.body));
@@ -156,9 +159,9 @@ console.log("9) עדכון כספת קיימת (overwrite):");
 {
   const r = await call(env, "/", {
     method: "POST",
-    body: JSON.stringify({ action: "save_vault", email: "new@example.com", password: "h2", vault: JSON.stringify({ v: 2 }) }),
+    body: JSON.stringify({ action: "save_vault", email: "new@example.com", authHash: "hash123", password: "h2", vault: JSON.stringify({ v: 2 }) }),
   });
-  const r2 = await call(env, "/", { method: "POST", body: JSON.stringify({ action: "get_vault", email: "new@example.com" }) });
+  const r2 = await call(env, "/", { method: "POST", body: JSON.stringify({ action: "get_vault", email: "new@example.com", password: "h2" }) });
   check("הכספת עודכנה", r.body && r.body.success && r2.body && r2.body.vault === JSON.stringify({ v: 2 }));
 }
 
@@ -225,6 +228,81 @@ console.log("16) OPTIONS עדיין עובד עם Token מוגדר (בלי Token
 {
   const r = await call(envT, "/", { method: "OPTIONS" });
   check("status 204", r.status === 204, "status=" + r.status);
+}
+
+
+console.log("\n--- בדיקות אבטחה חדשות (הקשחת אימות ו-Rate Limiting) ---");
+
+console.log("17) get_vault ללא סיסמה למשתמש קיים נחסם (401):");
+{
+  const r = await call(env, "/", {
+    method: "POST",
+    body: JSON.stringify({ action: "get_vault", email: "new@example.com" }),
+  });
+  check("status 401", r.status === 401);
+  check("success=false", r.body && r.body.success === false);
+}
+
+console.log("18) get_vault עם סיסמה שגויה נחסם (401):");
+{
+  const r = await call(env, "/", {
+    method: "POST",
+    body: JSON.stringify({ action: "get_vault", email: "new@example.com", password: "wrong_password" }),
+  });
+  check("status 401", r.status === 401);
+}
+
+console.log("19) save_vault ללא אימות תקין נחסם גם ללא clientVersion (מניעת עקיפה):");
+{
+  const r = await call(env, "/", {
+    method: "POST",
+    body: JSON.stringify({ action: "save_vault", email: "new@example.com", password: "attacker_attempt", vault: JSON.stringify({ evil: true }) }),
+  });
+  check("status 401 לדריסה זדונית", r.status === 401);
+}
+
+console.log("20) הגבלת קצב בשחזור סיסמה (Rate Limiting 429):");
+{
+  const { env: rEnv } = createEnv("");
+  rEnv.LEGACY_SCRIPT_URL = "https://example.com/relay";
+  rEnv.RECOVERY_RELAY_KEY = "relay-key";
+
+  // שמירת כספת עם חומר שחזור
+  await call(rEnv, "/", {
+    method: "POST",
+    body: JSON.stringify({
+      action: "save_vault",
+      email: "victim@example.com",
+      password: "pass",
+      vault: JSON.stringify({ ok: 1 }),
+      recoveryKey: "recKey123",
+      recoveryPackage: { ciphertext: "c", iv: "i", tag: "t" },
+    }),
+  });
+
+  // ביצוע 3 בקשות שחזור (מותרות)
+  for (let i = 0; i < 3; i++) {
+    await call(rEnv, "/", {
+      method: "POST",
+      body: JSON.stringify({ action: "begin_recovery", email: "victim@example.com" }),
+    });
+  }
+
+  // בקשה 4 אמורה להיחסם
+  const r4 = await call(rEnv, "/", {
+    method: "POST",
+    body: JSON.stringify({ action: "begin_recovery", email: "victim@example.com" }),
+  });
+  check("בקשה רביעית נחסמת עם 429", r4.status === 429, "status=" + r4.status);
+}
+
+console.log("21) הגנת CORS לדומיין זר (חסימת evil.com):");
+{
+  const r = await call(env, "/", {
+    method: "GET",
+    headers: { Origin: "https://evil.com" },
+  });
+  check("Origin זר לא מורשה מוגבל לדומיין הרשמי", r.headers.get("Access-Control-Allow-Origin") === "https://lev-good.github.io");
 }
 
 console.log("\nתוצאה: " + passed + " עברו, " + failed + " נכשלו");
