@@ -1987,6 +1987,9 @@
             <p class="input-help" style="font-size: 12px;">תומך בקבצי PNG, JPG, GIF</p>
           </div>
           <input type="file" id="qrFileInput" style="display: none;" accept="image/*" onchange="handleQrFileSelect(event)">
+          <div id="qrFilePreviewContainer" style="display: none; margin-top: 10px; text-align: center;">
+            <img id="qrFilePreview" style="max-width: 100%; max-height: 180px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);" alt="תצוגה מקדימה">
+          </div>
         </div>
       </div>
     </div>
@@ -2010,6 +2013,13 @@
         </p>
 
         <form id="recoveryForm" onsubmit="submitRecovery(event)">
+          <div class="form-group">
+            <label for="recoveryKeyInput">מפתח שחזור (הקוד הארוך מהמייל):</label>
+            <div class="input-wrapper">
+              <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><path d="m21 2-2 2m-1.5 1.5L13 10l-4-4-5.5 5.5a4.95 4.95 0 1 0 7 7L16 13l4.5-4.5M16 8l2 2"/></svg>
+              <input type="text" id="recoveryKeyInput" class="form-control" placeholder="הדבק כאן את מפתח השחזור..." required>
+            </div>
+          </div>
           <div class="form-group">
             <label for="recoveryNewPassword">סיסמת מאסטר חדשה:</label>
             <div class="input-wrapper">
