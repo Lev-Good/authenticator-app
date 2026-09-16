@@ -2742,6 +2742,81 @@
       }
     }
 
+    
+    // טיפול בטופס יצירת כספת חדשה (Setup New Vault Flow)
+    async function handleSetupSubmit(e) {
+      e.preventDefault();
+      const password = document.getElementById("setupPassword").value;
+      const confirmP = document.getElementById("setupPasswordConfirm").value;
+      const email = document.getElementById("setupEmail").value.trim().toLowerCase();
+
+      if (!email || !password || !confirmP) {
+        showToast("נא למלא את כל השדות!", "error");
+        return;
+      }
+
+      if (password !== confirmP) {
+        showToast("הסיסמאות אינן תואמות!", "error");
+        return;
+      }
+
+      const strength = validatePasswordStrength(password);
+      if (!strength.valid) {
+        showToast(strength.message, "error");
+        return;
+      }
+
+      if (!isBackendConfigured()) {
+        showToast("שרת הגיבוי טרם הוגדר. לא ניתן ליצור חשבון בענן.", "error");
+        return;
+      }
+
+      showToast("יוצר כספת מאובטחת בענן... נא להמתין", "info");
+
+      try {
+        const newVault = await initializeNewVault(password, email);
+        const pHash = await sha256(password);
+
+        const saveResp = await fetch(DEVELOPER_SCRIPT_URL, {
+          method: "POST",
+          headers: backendHeaders(),
+          body: JSON.stringify({
+            action: "save_vault",
+            email: email,
+            password: pHash,
+            vault: JSON.stringify(newVault),
+            clientVersion: "secure-v1"
+          })
+        });
+
+        const saveRes = await saveResp.json();
+
+        if (saveRes && saveRes.success) {
+          const iters = newVault.Iterations || 600000;
+          sessionKey = await deriveKey(password, new Uint8Array(atob(newVault.Salt).split("").map(c => c.charCodeAt(0))), iters);
+          currentVault = newVault;
+          currentEmail = email;
+          currentPasswordHash = pHash;
+          currentServerUpdatedAt = saveRes.updatedAt || "";
+          localSyncPending = false;
+          offlineSession = false;
+          accounts = [];
+          writeLocalVaultCache(false);
+
+          closeAuthModal();
+          showToast("כספת חדשה נוצרה וסונכרנה בהצלחה!", "success");
+          showScreen("dashboardScreen");
+          initDashboard();
+          setTimeout(() => syncVaultToCloud(), 0);
+        } else {
+          showToast(saveRes && saveRes.message ? saveRes.message : "שגיאה ביצירת כספת בענן!", "error");
+        }
+      } catch (err) {
+        console.error("Error creating vault:", err);
+        showToast("שגיאה ביצירת הכספת: " + err.message, "error");
+      }
+    }
+
     // התחברות או יצירת חשבון ענן (Login & Connection Flow)
     async function handleLoginSubmit(e) {
       e.preventDefault();
