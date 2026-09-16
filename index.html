@@ -1344,7 +1344,7 @@
     <main class="landing-hero">
       <div class="hero-badge">
         <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span>אבטחת אפס-ידע מקומית • Zero-Knowledge</span>
+        <span>אבטחת אפס-ידע • 600,000 איטרציות PBKDF2 • הגנת Rate-Limiting & CSP</span>
       </div>
 
       <h1 class="hero-title">
@@ -1373,8 +1373,8 @@
         <div class="feature-icon-box">
           <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-        <h3 class="feature-title">הצפנת אפס-ידע (AES-GCM)</h3>
-        <p class="feature-desc">כל המפתחות וקודי הגיבוי מוצפנים במכשירך בלבד. השרת רואה רק טקסט מוצפן ללא גישה לתוכן.</p>
+        <h3 class="feature-title">הצפנת אפס-ידע (AES-GCM-256)</h3>
+        <p class="feature-desc">גזירת מפתחות ב-600,000 איטרציות PBKDF2, אימות שרת הרמטי, הגנת Rate-Limiting ומדיניות CSP למניעת זליגת מידע.</p>
       </div>
 
       <div class="feature-card">
@@ -1471,7 +1471,7 @@
               <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <input type="password" id="setupPassword" class="form-control" placeholder="בחר סיסמה חזקה..." required>
             </div>
-            <div class="input-help">סיסמה זו משמשת להצפנת המפתחות. שמור עליה היטב!</div>
+            <div class="input-help">לפחות 12 תווים, בשילוב אותיות ומספרים/סימנים. סיסמה זו משמשת להצפנת המפתחות.</div>
           </div>
 
           <div class="form-group">
@@ -3123,7 +3123,7 @@
     // מידע על אבטחת אפס ידע
     function showForgotPasswordInfo(e) {
       e.preventDefault();
-      alert("הנתונים מוצפנים בצד הלקוח. שחזור סיסמה מתבצע באמצעות קישור חד-פעמי ומפתח שחזור, ללא שליחת הסיסמה הישנה במייל. שמור את מפתח השחזור במקום בטוח.");
+      alert("אבטחת אפס-ידע מוחלטת:\n\n• הכספת מוצפנת ומפוענחת במכשירך בלבד בתקן AES-GCM עם 600,000 איטרציות PBKDF2.\n• שרת הגיבוי אינו מכיר את הסיסמה שלך ולא יכול לפענח את הנתונים.\n• ניסיונות ניחוש נחסמים אוטומטית (Rate Limiting) והאתר מוגן במדיניות CSP מחמירה.\n• שחזור סיסמה מתבצע באמצעות קישור אימות חד-פעמי במייל ומפתח שחזור נפרד (ללא שליחת סיסמה).");
     }
 
     // נעילת האפליקציה (Logout/Lock App)
