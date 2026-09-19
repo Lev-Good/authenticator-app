@@ -20,6 +20,7 @@ namespace MasterAuthenticator
         public string email { get; set; } = "";
         public string secret { get; set; } = "";
         public string notes { get; set; } = "";
+        public string category { get; set; } = "";
         public List<BackupCode> backupCodes { get; set; } = new List<BackupCode>();
     }
 

@@ -41,6 +41,7 @@ namespace MasterAuthenticator
         private string _currentPasswordHash = "";
         private string _currentServerUpdatedAt = "";
         private bool _setupOfflineChoice = false; // בחירת המשתמש באשף ההפעלה הראשונה
+        private string _currentCategoryFilter = "ALL";
 
         // כתובת שרת הגיבוי החדש (Cloudflare Worker) - החלף את YOUR_WORKERS_SUBDOMAIN בסאבדומיין שקיבלת מ-Cloudflare
         private const string DeveloperScriptUrl = "https://master-auth-backup.mytovmail.workers.dev";
@@ -467,6 +468,7 @@ namespace MasterAuthenticator
         {
             _security.Lock();
             _accountViewModels.Clear();
+            _currentCategoryFilter = "ALL";
             ShowScreen("Lock");
             ShowToast("האפליקציה ננעלה בהצלחה.", false);
         }
@@ -480,12 +482,25 @@ namespace MasterAuthenticator
             var accounts = _security.GetAccounts();
             string filter = SearchInput.Text.Trim().ToLower();
 
+            RenderCategoryFilters(accounts);
+
             foreach (var acc in accounts)
             {
+                string accCat = (acc.category ?? "").Trim();
+                if (_currentCategoryFilter == "__UNCATEGORIZED__")
+                {
+                    if (!string.IsNullOrEmpty(accCat)) continue;
+                }
+                else if (_currentCategoryFilter != "ALL")
+                {
+                    if (!accCat.Equals(_currentCategoryFilter, StringComparison.OrdinalIgnoreCase)) continue;
+                }
+
                 if (string.IsNullOrEmpty(filter) ||
                     acc.name.ToLower().Contains(filter) ||
                     (!string.IsNullOrEmpty(acc.email) && acc.email.ToLower().Contains(filter)) ||
-                    (!string.IsNullOrEmpty(acc.notes) && acc.notes.ToLower().Contains(filter)))
+                    (!string.IsNullOrEmpty(acc.notes) && acc.notes.ToLower().Contains(filter)) ||
+                    (!string.IsNullOrEmpty(accCat) && accCat.ToLower().Contains(filter)))
                 {
                     var vm = new AccountViewModel(acc);
                     _accountViewModels.Add(vm);
@@ -498,8 +513,212 @@ namespace MasterAuthenticator
 
         private void UpdateAccountsCount()
         {
-            AccountsCountTitle.Text = $"חשבונות פעילים ({_accountViewModels.Count})";
+            string filterDesc = "";
+            if (_currentCategoryFilter == "__UNCATEGORIZED__")
+                filterDesc = " - ללא קטגוריה";
+            else if (_currentCategoryFilter != "ALL")
+                filterDesc = $" - {_currentCategoryFilter}";
+
+            AccountsCountTitle.Text = $"חשבונות פעילים ({_accountViewModels.Count}{filterDesc})";
             EmptyStatePanel.Visibility = _accountViewModels.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void RenderCategoryFilters(List<GoogleAccount> accounts)
+        {
+            CategoryFilterPanel.Children.Clear();
+
+            int totalAccounts = accounts.Count;
+            if (totalAccounts == 0)
+            {
+                CategoryFilterPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            CategoryFilterPanel.Visibility = Visibility.Visible;
+
+            var distinctCats = accounts
+                .Select(a => (a.category ?? "").Trim())
+                .Where(c => !string.IsNullOrEmpty(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(c => c)
+                .ToList();
+
+            var catCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            int uncategorizedCount = 0;
+
+            foreach (var acc in accounts)
+            {
+                string cat = (acc.category ?? "").Trim();
+                if (string.IsNullOrEmpty(cat))
+                {
+                    uncategorizedCount++;
+                }
+                else
+                {
+                    catCounts[cat] = catCounts.TryGetValue(cat, out int val) ? val + 1 : 1;
+                }
+            }
+
+            if (_currentCategoryFilter != "ALL" && _currentCategoryFilter != "__UNCATEGORIZED__" && !catCounts.ContainsKey(_currentCategoryFilter))
+            {
+                _currentCategoryFilter = "ALL";
+            }
+
+            // 'All' button
+            CategoryFilterPanel.Children.Add(CreateCategoryPill("הכל", $"({totalAccounts})", "ALL", _currentCategoryFilter == "ALL"));
+
+            // Distinct category buttons
+            foreach (var cat in distinctCats)
+            {
+                int count = catCounts.TryGetValue(cat, out int val) ? val : 0;
+                CategoryFilterPanel.Children.Add(CreateCategoryPill(cat, $"({count})", cat, string.Equals(_currentCategoryFilter, cat, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            // 'Uncategorized' button if uncategorized accounts exist and categories are present
+            if (uncategorizedCount > 0 && distinctCats.Count > 0)
+            {
+                CategoryFilterPanel.Children.Add(CreateCategoryPill("ללא קטגוריה", $"({uncategorizedCount})", "__UNCATEGORIZED__", _currentCategoryFilter == "__UNCATEGORIZED__"));
+            }
+        }
+
+        private Button CreateCategoryPill(string label, string countText, string tagValue, bool isActive)
+        {
+            var btn = new Button
+            {
+                Tag = tagValue,
+                Margin = new Thickness(0, 0, 8, 0),
+                Cursor = Cursors.Hand,
+                Padding = new Thickness(12, 6, 12, 6),
+                BorderThickness = new Thickness(1),
+                FontSize = 13
+            };
+
+            var sp = new StackPanel { Orientation = Orientation.Horizontal };
+            var textBlock = new TextBlock
+            {
+                Text = label,
+                FontWeight = isActive ? FontWeights.Bold : FontWeights.SemiBold,
+                Margin = new Thickness(0, 0, 6, 0)
+            };
+            var countBlock = new TextBlock
+            {
+                Text = countText,
+                FontSize = 11,
+                Opacity = 0.85
+            };
+
+            sp.Children.Add(textBlock);
+            sp.Children.Add(countBlock);
+            btn.Content = sp;
+
+            if (isActive)
+            {
+                btn.Background = new SolidColorBrush(Color.FromRgb(2, 132, 199)); // sky-600
+                btn.BorderBrush = new SolidColorBrush(Color.FromRgb(56, 189, 248)); // sky-400
+                btn.Foreground = Brushes.White;
+            }
+            else
+            {
+                btn.Background = new SolidColorBrush(Color.FromRgb(30, 41, 59)); // slate-800
+                btn.BorderBrush = new SolidColorBrush(Color.FromRgb(51, 65, 85)); // slate-700
+                btn.Foreground = new SolidColorBrush(Color.FromRgb(148, 163, 184)); // slate-400
+            }
+
+            var template = new ControlTemplate(typeof(Button));
+            var borderFactory = new FrameworkElementFactory(typeof(Border));
+            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(16));
+            borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
+            borderFactory.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Button.BorderBrushProperty));
+            borderFactory.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Button.BorderThicknessProperty));
+            borderFactory.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Button.PaddingProperty));
+
+            var contentFactory = new FrameworkElementFactory(typeof(ContentPresenter));
+            contentFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            contentFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            borderFactory.AppendChild(contentFactory);
+
+            template.VisualTree = borderFactory;
+            btn.Template = template;
+
+            btn.Click += (s, e) =>
+            {
+                _currentCategoryFilter = tagValue;
+                LoadAccountsList();
+            };
+
+            return btn;
+        }
+
+        private void CategoryBadge_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is FrameworkElement elem && elem.Tag is string cat && !string.IsNullOrWhiteSpace(cat))
+            {
+                _currentCategoryFilter = cat;
+                LoadAccountsList();
+                e.Handled = true;
+            }
+        }
+
+        private List<string> GetExistingCategories()
+        {
+            return _security.GetAccounts()
+                .Select(a => (a.category ?? "").Trim())
+                .Where(c => !string.IsNullOrEmpty(c))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(c => c)
+                .ToList();
+        }
+
+        private void PopulateModalCategorySuggestions()
+        {
+            ModalCategorySuggestionsPanel.Children.Clear();
+            var existingCats = GetExistingCategories();
+            if (existingCats.Count == 0)
+            {
+                ModalCategorySuggestionsPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            ModalCategorySuggestionsPanel.Visibility = Visibility.Visible;
+            foreach (var cat in existingCats)
+            {
+                var chip = new Button
+                {
+                    Content = $"+ {cat}",
+                    Tag = cat,
+                    Margin = new Thickness(0, 0, 6, 6),
+                    Padding = new Thickness(8, 3, 8, 3),
+                    FontSize = 11,
+                    Background = new SolidColorBrush(Color.FromArgb(40, 56, 189, 248)),
+                    BorderBrush = new SolidColorBrush(Color.FromArgb(80, 56, 189, 248)),
+                    BorderThickness = new Thickness(1),
+                    Foreground = new SolidColorBrush(Color.FromRgb(56, 189, 248)),
+                    Cursor = Cursors.Hand
+                };
+
+                var chipTemplate = new ControlTemplate(typeof(Button));
+                var bFact = new FrameworkElementFactory(typeof(Border));
+                bFact.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+                bFact.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
+                bFact.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Button.BorderBrushProperty));
+                bFact.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Button.BorderThicknessProperty));
+                bFact.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Button.PaddingProperty));
+
+                var cFact = new FrameworkElementFactory(typeof(ContentPresenter));
+                cFact.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+                cFact.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+                bFact.AppendChild(cFact);
+
+                chipTemplate.VisualTree = bFact;
+                chip.Template = chipTemplate;
+
+                chip.Click += (s, e) =>
+                {
+                    ModalAccCategory.Text = cat;
+                };
+
+                ModalCategorySuggestionsPanel.Children.Add(chip);
+            }
         }
 
         private void TotpTimer_Tick(object? sender, EventArgs e)
@@ -616,6 +835,8 @@ namespace MasterAuthenticator
             ModalTitle.Text = "הוספת חשבון חדש";
             ModalAccName.Text = "";
             ModalAccEmail.Text = "";
+            ModalAccCategory.Text = (_currentCategoryFilter != "ALL" && _currentCategoryFilter != "__UNCATEGORIZED__") ? _currentCategoryFilter : "";
+            PopulateModalCategorySuggestions();
             ModalAccSecret.Text = "";
             ModalAccNotes.Text = "";
             
@@ -645,6 +866,8 @@ namespace MasterAuthenticator
                     ModalTitle.Text = "עריכת חשבון";
                     ModalAccName.Text = _editingAccount.name;
                     ModalAccEmail.Text = _editingAccount.email;
+                    ModalAccCategory.Text = _editingAccount.category ?? "";
+                    PopulateModalCategorySuggestions();
                     ModalAccSecret.Text = _editingAccount.secret;
                     ModalAccNotes.Text = _editingAccount.notes;
 
@@ -716,6 +939,7 @@ namespace MasterAuthenticator
         {
             string name = ModalAccName.Text.Trim();
             string email = ModalAccEmail.Text.Trim();
+            string category = ModalAccCategory.Text.Trim();
             string secret = ModalAccSecret.Text.Trim().Replace(" ", "").ToUpper();
             string notes = ModalAccNotes.Text.Trim();
 
@@ -762,6 +986,7 @@ namespace MasterAuthenticator
                 {
                     target.name = name;
                     target.email = email;
+                    target.category = category;
                     target.secret = secret;
                     target.notes = notes;
                     target.backupCodes = codesList;
@@ -776,6 +1001,7 @@ namespace MasterAuthenticator
                     id = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
                     name = name,
                     email = email,
+                    category = category,
                     secret = secret,
                     notes = notes,
                     backupCodes = codesList
@@ -874,12 +1100,14 @@ namespace MasterAuthenticator
         {
             ModalGuide_Welcome.Visibility = stepName == "Welcome" ? Visibility.Visible : Visibility.Collapsed;
             ModalGuide_Name.Visibility = stepName == "Name" ? Visibility.Visible : Visibility.Collapsed;
+            ModalGuide_Category.Visibility = stepName == "Category" ? Visibility.Visible : Visibility.Collapsed;
             ModalGuide_Secret.Visibility = stepName == "Secret" ? Visibility.Visible : Visibility.Collapsed;
             ModalGuide_Notes.Visibility = stepName == "Notes" ? Visibility.Visible : Visibility.Collapsed;
             ModalGuide_Backup.Visibility = stepName == "Backup" ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void ModalAccName_GotFocus(object sender, RoutedEventArgs e) => ShowModalGuide("Name");
+        private void ModalAccCategory_GotFocus(object sender, RoutedEventArgs e) => ShowModalGuide("Category");
         private void ModalAccSecret_GotFocus(object sender, RoutedEventArgs e)
         {
             ShowModalGuide("Secret");
@@ -2028,6 +2256,8 @@ namespace MasterAuthenticator
         public string name => Account.name;
         public string email => Account.email;
         public string notes => Account.notes;
+        public string category => Account.category ?? "";
+        public Visibility CategoryVisibility => string.IsNullOrWhiteSpace(category) ? Visibility.Collapsed : Visibility.Visible;
         public List<BackupCode> backupCodes => Account.backupCodes;
 
         public string Code

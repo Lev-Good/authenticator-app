@@ -472,13 +472,19 @@
                         <Grid x:Name="AccountsView" Visibility="Visible">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" x:Name="AccountsCountTitle" Text="חשבונות פעילים (0)" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" Margin="0,0,0,15"/>
+                            <TextBlock Grid.Row="0" x:Name="AccountsCountTitle" Text="חשבונות פעילים (0)" Foreground="#F8FAFC" FontSize="22" FontWeight="Bold" Margin="0,0,0,10"/>
+
+                            <!-- Category filter bar -->
+                            <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,15">
+                                <StackPanel x:Name="CategoryFilterPanel" Orientation="Horizontal"/>
+                            </ScrollViewer>
 
                             <!-- Scrollable list of accounts -->
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                                 <ItemsControl x:Name="AccountsList">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
@@ -487,7 +493,12 @@
                                                     <!-- Card Header -->
                                                     <Grid Margin="0,0,0,12">
                                                         <StackPanel HorizontalAlignment="Right">
-                                                            <TextBlock Text="{Binding name}" Foreground="#F8FAFC" FontSize="16" FontWeight="Bold"/>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="{Binding name}" Foreground="#F8FAFC" FontSize="16" FontWeight="Bold"/>
+                                                                <Border Background="#1e293b" BorderBrush="#38bdf8" BorderThickness="1" CornerRadius="6" Padding="6,2" Margin="8,0,0,0" Cursor="Hand" MouseLeftButtonDown="CategoryBadge_Click" Tag="{Binding category}" Visibility="{Binding CategoryVisibility}">
+                                                                    <TextBlock Text="{Binding category}" Foreground="#38bdf8" FontSize="11" FontWeight="SemiBold"/>
+                                                                </Border>
+                                                            </StackPanel>
                                                             <TextBlock Text="{Binding email}" Foreground="#94A3B8" FontSize="14" Visibility="{Binding email, Converter={StaticResource ResourceKey=NullToVisibilityConverter}}"/>
                                                         </StackPanel>
                                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
@@ -834,6 +845,10 @@
                                 <TextBlock Text="כתובת אימייל או שם משתמש (אופציונלי):" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
                                 <TextBox x:Name="ModalAccEmail" Style="{StaticResource ModernTextBox}" Tag="username@example.com" GotFocus="ModalAccName_GotFocus" Margin="0,0,0,12"/>
 
+                                <TextBlock Text="קטגוריה (לדוגמה: עבודה, אישי, פיננסים):" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                                <TextBox x:Name="ModalAccCategory" Style="{StaticResource ModernTextBox}" Tag="בחר למטה או הקלד קטגוריה חדשה..." GotFocus="ModalAccCategory_GotFocus" Margin="0,0,0,4"/>
+                                <WrapPanel x:Name="ModalCategorySuggestionsPanel" Orientation="Horizontal" Margin="0,0,0,12"/>
+
                                 <TextBlock Text="מפתח סודי (Base32 Secret):" Foreground="#94A3B8" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5"/>
                                 <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
@@ -888,6 +903,13 @@
                                 <StackPanel x:Name="ModalGuide_Name" Visibility="Collapsed" VerticalAlignment="Center">
                                     <TextBlock Text="🏷️ שם החשבון ואימייל" Foreground="#8B5CF6" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
                                     <TextBlock Text="רשום שם קצר ונוח לחשבון (לדוגמה: 'חשבון 1' או 'אימייל עבודה'). מומלץ גם להזין את כתובת האימייל של החשבון בשדה השני כדי לדעת תמיד למי הוא שייך." Foreground="#F8FAFC" FontSize="13" TextWrapping="Wrap" LineHeight="1.5"/>
+                                </StackPanel>
+
+                                <!-- Category focus help -->
+                                <StackPanel x:Name="ModalGuide_Category" Visibility="Collapsed" VerticalAlignment="Center">
+                                    <TextBlock Text="🏷️ שיוך לקטגוריה" Foreground="#8B5CF6" FontSize="15" FontWeight="Bold" Margin="0,0,0,10"/>
+                                    <TextBlock Text="בחר קטגוריה קיימת מהכפתורים שמתחת לשדה או הקלד שם של קטגוריה חדשה (לדוגמה: 'עבודה', 'אישי', 'פיננסים', 'קניות')." Foreground="#F8FAFC" FontSize="13" TextWrapping="Wrap" LineHeight="1.5" Margin="0,0,0,10"/>
+                                    <TextBlock Text="הקטגוריות מוצגות בסרגל כפתורים עליון מעל רשימת החשבונות ומאפשרות סינון מיידי בלחיצה אחת!" Foreground="#38BDF8" FontSize="12" TextWrapping="Wrap" LineHeight="1.5"/>
                                 </StackPanel>
 
                                 <!-- Secret Key focus help -->

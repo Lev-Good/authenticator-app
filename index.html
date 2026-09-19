@@ -786,6 +786,109 @@
       100% { transform: scale(1); }
     }
 
+    /* סרגל סינון קטגוריות מהיר */
+    .category-filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 2px 14px 2px;
+      margin-bottom: 16px;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    .category-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: var(--transition);
+      user-select: none;
+    }
+    .category-pill:hover {
+      background: var(--bg-subtle);
+      border-color: var(--border-strong);
+      color: var(--text-main);
+    }
+    .category-pill.active {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    }
+    .category-pill .pill-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      border-radius: 10px;
+      font-size: 11.5px;
+      background: rgba(0, 0, 0, 0.07);
+      color: inherit;
+    }
+    .category-pill.active .pill-count {
+      background: rgba(255, 255, 255, 0.25);
+      color: #ffffff;
+    }
+    [data-theme="dark"] .category-pill .pill-count {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    [data-theme="dark"] .category-pill.active .pill-count {
+      background: rgba(255, 255, 255, 0.28);
+    }
+
+    /* כותרת כרטיס ותגית קטגוריה */
+    .card-title-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .account-category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      background: rgba(37, 99, 235, 0.08);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+      color: var(--color-primary);
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--transition);
+      line-height: 1.4;
+    }
+    .account-category-badge:hover {
+      background: rgba(37, 99, 235, 0.16);
+      border-color: var(--color-primary);
+    }
+    [data-theme="dark"] .account-category-badge {
+      background: rgba(56, 189, 248, 0.12);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+    }
+    [data-theme="dark"] .account-category-badge:hover {
+      background: rgba(56, 189, 248, 0.22);
+      border-color: #38bdf8;
+    }
+    .icon-xs {
+      width: 12px;
+      height: 12px;
+    }
+
     .card-top {
       display: flex;
       align-items: flex-start;
@@ -795,8 +898,8 @@
     .card-name-group {
       display: flex;
       flex-direction: column;
-      gap: 2px;
-      max-width: 220px;
+      gap: 4px;
+      max-width: calc(100% - 70px);
     }
     .card-name {
       font-size: 16px;
@@ -1582,6 +1685,9 @@
             </h2>
           </div>
 
+          <!-- סרגל סינון קטגוריות מהיר -->
+          <div class="category-filter-bar" id="categoryFilterBar" style="display: none;"></div>
+
           <div class="accounts-grid" id="accountsGrid">
             <!-- כרטיסי החשבונות ייטענו כאן דינמית -->
           </div>
@@ -1815,6 +1921,15 @@
           </div>
 
           <div class="form-group">
+            <label for="accCategory">קטגוריה (למשל: עבודה, אישי, בנקים):</label>
+            <div class="input-wrapper">
+              <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <input type="text" id="accCategory" class="form-control" placeholder="בחר או הקלד קטגוריה חדשה..." list="categorySuggestions" onfocus="showModalGuide('category')">
+              <datalist id="categorySuggestions"></datalist>
+            </div>
+          </div>
+
+          <div class="form-group">
             <label for="accSecret">מפתח סודי של גוגל (Base32 Secret):</label>
             <div style="display: flex; gap: 8px; align-items: center;">
               <div class="input-wrapper" style="flex: 1;">
@@ -1881,6 +1996,15 @@
             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">שם החשבון ואימייל</h4>
             <p class="input-help" style="font-size: 13px; line-height: 1.55;">
               בחר שם קצר ומזהה (למשל "חשבון 1" או "אימייל עבודה") כדי למצוא אותו בקלות בלוח הבקרה.
+            </p>
+          </div>
+
+          <div class="modal-guide-step" id="modalGuide_category">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">שיוך לקטגוריה</h4>
+            <p class="input-help" style="font-size: 13px; line-height: 1.55;">
+              בחר קטגוריה קיימת או הקלד שם של קטגוריה חדשה (לדוגמה: <b>עבודה</b>, <b>אישי</b>, <b>פיננסים</b>).
+              <br><br>
+              הקטגוריות מאפשרות לך לסנן ולנווט בקלות ובמהירות בין עשרות חשבונות בסרגל העליון בלוח הבקרה!
             </p>
           </div>
 
@@ -2159,6 +2283,7 @@
     // א. משתנים גלובליים ונתונים בזיכרון (Memory State)
     // ----------------------------------------------------
     let accounts = []; // רשימת החשבונות המפוענחת במהלך הסשן
+    let currentCategoryFilter = "ALL"; // מסנן הקטגוריה הפעיל כעת בדשבורד
     let sessionKey = null; // מפתח ה-AES-GCM המיוצר מסיסמת המשתמש (נשמר בזיכרון בלבד!)
     let currentVault = null; // אובייקט הכספת הפעיל שנטען מהענן
     let currentEmail = ""; // אימייל המשתמש המחובר כעת
@@ -2811,6 +2936,7 @@
           localSyncPending = false;
           offlineSession = false;
           accounts = [];
+      currentCategoryFilter = "ALL";
           writeLocalVaultCache(false);
 
           closeAuthModal();
@@ -3427,38 +3553,161 @@
         .replace(/'/g, "&#39;");
     }
 
+    // עזרי ניהול קטגוריות
+    function getDistinctCategories() {
+      const cats = new Set();
+      accounts.forEach(a => {
+        const c = (a.category || "").trim();
+        if (c) cats.add(c);
+      });
+      return Array.from(cats).sort((a, b) => a.localeCompare(b, 'he'));
+    }
+
+    function updateCategorySuggestions() {
+      const datalist = document.getElementById("categorySuggestions");
+      if (!datalist) return;
+      const cats = getDistinctCategories();
+      datalist.innerHTML = cats.map(c => `<option value="${escapeHtml(c)}">`).join("");
+    }
+
+    function setCategoryFilter(category) {
+      currentCategoryFilter = category;
+      renderAccounts();
+    }
+
+    function clearAccountFilter() {
+      currentCategoryFilter = "ALL";
+      document.getElementById("searchInput").value = "";
+      renderAccounts();
+    }
+
+    function renderCategoryFilterBar() {
+      const bar = document.getElementById("categoryFilterBar");
+      if (!bar) return;
+
+      const distinctCats = getDistinctCategories();
+      const totalCount = accounts.length;
+
+      if (totalCount === 0) {
+        bar.innerHTML = "";
+        bar.style.display = "none";
+        return;
+      }
+
+      bar.style.display = "flex";
+
+      const catCounts = {};
+      let uncategorizedCount = 0;
+      accounts.forEach(a => {
+        const c = (a.category || "").trim();
+        if (c) {
+          catCounts[c] = (catCounts[c] || 0) + 1;
+        } else {
+          uncategorizedCount++;
+        }
+      });
+
+      if (currentCategoryFilter !== "ALL" && currentCategoryFilter !== "__UNCATEGORIZED__" && !catCounts[currentCategoryFilter]) {
+        currentCategoryFilter = "ALL";
+      }
+
+      let html = `
+        <button type="button" class="category-pill ${currentCategoryFilter === 'ALL' ? 'active' : ''}" onclick="setCategoryFilter('ALL')" title="הצג את כל החשבונות">
+          <span>הכל</span>
+          <span class="pill-count">${totalCount}</span>
+        </button>
+      `;
+
+      distinctCats.forEach(cat => {
+        const isActive = currentCategoryFilter === cat ? 'active' : '';
+        const count = catCounts[cat] || 0;
+        html += `
+          <button type="button" class="category-pill ${isActive}" onclick="setCategoryFilter('${escapeHtml(cat)}')" title="סנן לפי קטגוריה '${escapeHtml(cat)}'">
+            <span>${escapeHtml(cat)}</span>
+            <span class="pill-count">${count}</span>
+          </button>
+        `;
+      });
+
+      if (uncategorizedCount > 0 && distinctCats.length > 0) {
+        const isActive = currentCategoryFilter === '__UNCATEGORIZED__' ? 'active' : '';
+        html += `
+          <button type="button" class="category-pill ${isActive}" onclick="setCategoryFilter('__UNCATEGORIZED__')" title="חשבונות ללא שיוך קטגוריה">
+            <span>ללא קטגוריה</span>
+            <span class="pill-count">${uncategorizedCount}</span>
+          </button>
+        `;
+      }
+
+      bar.innerHTML = html;
+    }
+
     // רישום והצגת רשימת החשבונות (Render Accounts Grid)
     function renderAccounts() {
+      renderCategoryFilterBar();
+      updateCategorySuggestions();
+
       const grid = document.getElementById("accountsGrid");
       const searchVal = document.getElementById("searchInput").value.trim().toLowerCase();
       
       grid.innerHTML = "";
       
       const filtered = accounts.filter(acc => {
-        return acc.name.toLowerCase().includes(searchVal) || 
+        const accCat = (acc.category || "").trim();
+        if (currentCategoryFilter === "__UNCATEGORIZED__") {
+          if (accCat !== "") return false;
+        } else if (currentCategoryFilter !== "ALL") {
+          if (accCat.toLowerCase() !== currentCategoryFilter.toLowerCase()) return false;
+        }
+
+        if (!searchVal) return true;
+        return (acc.name && acc.name.toLowerCase().includes(searchVal)) || 
                (acc.email && acc.email.toLowerCase().includes(searchVal)) ||
-               (acc.notes && acc.notes.toLowerCase().includes(searchVal));
+               (acc.notes && acc.notes.toLowerCase().includes(searchVal)) ||
+               (accCat && accCat.toLowerCase().includes(searchVal));
       });
       
+      let filterDesc = "";
+      if (currentCategoryFilter === "__UNCATEGORIZED__") {
+        filterDesc = " - ללא קטגוריה";
+      } else if (currentCategoryFilter !== "ALL") {
+        filterDesc = ` - ${escapeHtml(currentCategoryFilter)}`;
+      }
+
       document.getElementById("accountsCountTitle").innerHTML = `
         <svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <span>חשבונות פעילים (${filtered.length})</span>
+        <span>חשבונות פעילים (${filtered.length}${filterDesc})</span>
       `;
       
       if (filtered.length === 0) {
-        grid.innerHTML = `
-          <div class="empty-state-box">
-            <div class="empty-state-icon">
-              <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+        if (accounts.length === 0) {
+          grid.innerHTML = `
+            <div class="empty-state-box">
+              <div class="empty-state-icon">
+                <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+              </div>
+              <div class="empty-state-title">אין חשבונות להצגה</div>
+              <div class="empty-state-desc">לא נמצאו חשבונות מתאימים. לחץ על "הוסף חשבון חדש" כדי להתחיל!</div>
+              <button class="btn btn-primary btn-sm" onclick="openAddModal()">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                <span>הוסף חשבון ראשון</span>
+              </button>
             </div>
-            <div class="empty-state-title">אין חשבונות להצגה</div>
-            <div class="empty-state-desc">לא נמצאו חשבונות מתאימים. לחץ על "הוסף חשבון חדש" כדי להתחיל!</div>
-            <button class="btn btn-primary btn-sm" onclick="openAddModal()">
-              <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              <span>הוסף חשבון ראשון</span>
-            </button>
-          </div>
-        `;
+          `;
+        } else {
+          grid.innerHTML = `
+            <div class="empty-state-box">
+              <div class="empty-state-icon">
+                <svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </div>
+              <div class="empty-state-title">לא נמצאו תוצאות לסינון הנוכחי</div>
+              <div class="empty-state-desc">אין חשבונות התואמים לקטגוריה או מילת החיפוש שהוזנו.</div>
+              <button class="btn btn-secondary btn-sm" onclick="clearAccountFilter()">
+                <span>נקה סינון והצג הכל</span>
+              </button>
+            </div>
+          `;
+        }
         return;
       }
       
@@ -3491,10 +3740,20 @@
           backupCodesHtml = `<div class="input-help" style="grid-column: 1 / -1; text-align: center;">לא הוגדרו קודי גיבוי לחשבון זה.</div>`;
         }
         
+        const categoryBadgeHtml = (acc.category && acc.category.trim()) ? `
+          <button type="button" class="account-category-badge" onclick="event.stopPropagation(); setCategoryFilter('${escapeHtml(acc.category.trim())}')" title="סנן לפי קטגוריה '${escapeHtml(acc.category.trim())}'">
+            <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+            <span>${escapeHtml(acc.category.trim())}</span>
+          </button>
+        ` : '';
+
         card.innerHTML = `
           <div class="card-top">
             <div class="card-name-group">
-              <span class="card-name">${escapeHtml(acc.name)}</span>
+              <div class="card-title-row">
+                <span class="card-name">${escapeHtml(acc.name)}</span>
+                ${categoryBadgeHtml}
+              </div>
               ${acc.email ? `<span class="card-email">${escapeHtml(acc.email)}</span>` : ''}
             </div>
             
@@ -3639,6 +3898,10 @@
       document.getElementById("accountForm").reset();
       document.getElementById("accountEditId").value = "";
       document.getElementById("modalSubmitBtn").innerText = "שמור חשבון";
+
+      const defaultCat = (currentCategoryFilter !== "ALL" && currentCategoryFilter !== "__UNCATEGORIZED__") ? currentCategoryFilter : "";
+      document.getElementById("accCategory").value = defaultCat;
+      updateCategorySuggestions();
       
       resetBackupCodesInput();
       showModalGuide("welcome"); // הצגת הסבר ברוכים הבאים
@@ -3656,6 +3919,8 @@
       document.getElementById("accountEditId").value = acc.id;
       document.getElementById("accName").value = acc.name;
       document.getElementById("accEmail").value = acc.email || "";
+      document.getElementById("accCategory").value = acc.category || "";
+      updateCategorySuggestions();
       document.getElementById("accSecret").value = acc.secret;
       document.getElementById("accNotes").value = acc.notes || "";
       
@@ -3701,6 +3966,7 @@
       const id = document.getElementById("accountEditId").value;
       const name = document.getElementById("accName").value.trim();
       const email = document.getElementById("accEmail").value.trim();
+      const category = document.getElementById("accCategory").value.trim();
       const secret = document.getElementById("accSecret").value.replace(/\s/g, '').toUpperCase();
       const notes = document.getElementById("accNotes").value.trim();
       
@@ -3733,7 +3999,7 @@
       if (id) {
         const index = accounts.findIndex(a => a.id === id);
         if (index !== -1) {
-          accounts[index] = { ...accounts[index], name, email, secret, notes, backupCodes };
+          accounts[index] = { ...accounts[index], name, email, category, secret, notes, backupCodes };
           showToast("החשבון עודכן בהצלחה!", "success");
         }
       } else {
@@ -3741,6 +4007,7 @@
           id: Date.now().toString(),
           name,
           email,
+          category,
           secret,
           notes,
           backupCodes
