@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Authenticator - מאמת חשבונות גוגל מרכזי ומאובטח</title>
-  <meta name="description" content="כלי מאובטח ומרכזי לניהול מפתחות אימות TOTP וקודי גיבוי לחשבונות גוגל בעיצוב מינימליסטי ומודרני.">
+  <title>Master Authenticator - מאמת חשבונות מרכזי ומאובטח</title>
+  <meta name="description" content="כלי מאובטח ומרכזי לניהול מפתחות אימות TOTP וקודי גיבוי לחשבונות בעיצוב מינימליסטי ומודרני.">
   <!-- Content Security Policy (CSP) -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://master-auth-backup.mytovmail.workers.dev https://*.workers.dev; object-src 'none'; base-uri 'self';">
   
@@ -1493,7 +1493,7 @@
           <svg class="icon" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
         </div>
         <h3 class="feature-title">כספת 10 קודי גיבוי</h3>
-        <p class="feature-desc">שמירת קודי גיבוי החירום של גוגל, ייבוא ישיר מקובץ טקסט וסימון קודים שכבר נוצלו.</p>
+        <p class="feature-desc">שמירת קודי גיבוי החירום לחשבונות, ייבוא ישיר מקובץ טקסט וסימון קודים שכבר נוצלו.</p>
       </div>
 
       <div class="feature-card">
@@ -1656,7 +1656,7 @@
         <nav class="nav-tabs-menu">
           <button class="nav-tab-item active" id="tabBtnAccounts" onclick="switchTab('accounts')">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span>חשבונות גוגל שלי</span>
+            <span>החשבונות שלי</span>
           </button>
           <button class="nav-tab-item" id="tabBtnGuide" onclick="switchTab('guide')">
             <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg>
@@ -1704,7 +1704,7 @@
 
           <div class="guide-article">
             <p style="font-size: 15px; color: var(--text-muted); margin-bottom: 24px;">
-              כאן תלמד כיצד להוסיף חשבונות גוגל למאמת המרכזי ולקבל קודי אימות TOTP וקודי גיבוי בשלבים פשוטים.
+              כאן תלמד כיצד להוסיף חשבונות (גוגל, מיקרוסופט, גיטהאב ועוד) למאמת המרכזי ולקבל קודי אימות TOTP וקודי גיבוי בשלבים פשוטים.
             </p>
 
             <div class="guide-step-card">
@@ -1943,7 +1943,7 @@
   <div class="modal-overlay" id="accountModal">
     <div class="modal-dialog account-modal-dialog">
       <div class="account-modal-header">
-        <h3 style="font-size: 17px; font-weight: 700;" id="modalTitle">הוספת חשבון גוגל חדש</h3>
+        <h3 style="font-size: 17px; font-weight: 700;" id="modalTitle">הוספת חשבון חדש</h3>
         <button class="modal-close-btn" style="position: static;" onclick="closeModal()">
           <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
@@ -1966,7 +1966,7 @@
             <label for="accEmail">כתובת אימייל (אופציונלי):</label>
             <div class="input-wrapper">
               <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              <input type="email" id="accEmail" class="form-control" placeholder="username@gmail.com" onfocus="showModalGuide('name')">
+              <input type="email" id="accEmail" class="form-control" placeholder="username@example.com" onfocus="showModalGuide('name')">
             </div>
           </div>
 
@@ -1980,11 +1980,11 @@
           </div>
 
           <div class="form-group">
-            <label for="accSecret">מפתח סודי של גוגל (Base32 Secret):</label>
+            <label for="accSecret">מפתח אימות סודי (Base32 Secret):</label>
             <div style="display: flex; gap: 8px; align-items: center;">
               <div class="input-wrapper" style="flex: 1;">
                 <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><path d="m21 2-2 2m-1.5 1.5L13 10l-4-4-5.5 5.5a4.95 4.95 0 1 0 7 7L16 13l4.5-4.5M16 8l2 2"/></svg>
-                <input type="text" id="accSecret" class="form-control" placeholder="הדבק את המפתח הסודי מגוגל..." required pattern="^[a-zA-Z2-7\s=]+$" onfocus="showModalGuide('secret')">
+                <input type="text" id="accSecret" class="form-control" placeholder="הדבק את המפתח הסודי..." required pattern="^[a-zA-Z2-7\s=]+$" onfocus="showModalGuide('secret')">
               </div>
               <button type="button" class="btn btn-secondary btn-sm" onclick="openQrScanner()" title="סרוק קוד QR או העלה תמונה">
                 <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
@@ -2010,7 +2010,7 @@
                 <span>טען קובץ גיבוי (TXT)</span>
               </button>
               <input type="file" id="backupCodesFileInput" style="display: none;" accept=".txt" onchange="handleBackupCodesUpload(event)">
-              <span style="font-size: 11.5px; color: var(--text-muted);">טוען אוטומטית את 10 הקודים מקובץ גוגל</span>
+              <span style="font-size: 11.5px; color: var(--text-muted);">טוען אוטומטית את קודי הגיבוי מקובץ הטקסט</span>
             </div>
 
             <div class="backup-codes-inputs-grid">
@@ -2038,7 +2038,7 @@
           <div class="modal-guide-step active" id="modalGuide_welcome">
             <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 8px;">הדרכה מהירה בטופס</h4>
             <p class="input-help" style="font-size: 13px; line-height: 1.55;">
-              לחץ על שדה כלשהו בטופס מימין כדי לצפות בהסבר מפורט ובצילומי מסך מהגדרות גוגל.
+              לחץ על שדה כלשהו בטופס מימין כדי לצפות בהסבר מפורט ובצילומי מסך מהגדרות האימות.
             </p>
           </div>
 
@@ -2059,7 +2059,7 @@
           </div>
 
           <div class="modal-guide-step" id="modalGuide_secret">
-            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">קבלת מפתח האימות מגוגל</h4>
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">קבלת מפתח האימות והקוד</h4>
             <div class="ss-tabs">
               <button type="button" class="ss-tab active" onclick="switchSSTab(this, 'sec_ss1')">1. אימות דו-שלבי</button>
               <button type="button" class="ss-tab" onclick="switchSSTab(this, 'sec_ss2')">2. טלפון</button>
@@ -3944,7 +3944,7 @@
     }
 
     function openAddModal() {
-      document.getElementById("modalTitle").innerText = "הוספת חשבון גוגל חדש";
+      document.getElementById("modalTitle").innerText = "הוספת חשבון חדש";
       document.getElementById("accountForm").reset();
       document.getElementById("accountEditId").value = "";
       document.getElementById("modalSubmitBtn").innerText = "שמור חשבון";
@@ -3965,7 +3965,7 @@
       const acc = accounts.find(a => a.id === id);
       if (!acc) return;
       
-      document.getElementById("modalTitle").innerText = "עריכת חשבון גוגל";
+      document.getElementById("modalTitle").innerText = "עריכת חשבון";
       document.getElementById("accountEditId").value = acc.id;
       document.getElementById("accName").value = acc.name;
       document.getElementById("accEmail").value = acc.email || "";
@@ -4675,7 +4675,7 @@
             let issuer = url.searchParams.get("issuer") || "";
             let label = decodeURIComponent(url.pathname.replace(/^\/\/totp\//, ""));
             let email = "";
-            let name = "חשבון גוגל";
+            let name = "חשבון";
             
             if (label.includes(":")) {
               const parts = label.split(":");
@@ -4685,9 +4685,9 @@
             
             if (label.includes("@")) {
               email = label;
-              name = (issuer ? issuer : "חשבון גוגל");
+              name = (issuer ? issuer : "חשבון");
             } else {
-              name = label || (issuer ? issuer : "חשבון גוגל");
+              name = label || (issuer ? issuer : "חשבון");
             }
             
             if (secret) {
@@ -4712,7 +4712,7 @@
         return;
       }
       
-      showToast("נסרק מידע שאינו מפתח סודי תקין של גוגל!", "warning");
+      showToast("נסרק מידע שאינו מפתח סודי תקין!", "warning");
     }
 
     function triggerQrFileSelect() {
