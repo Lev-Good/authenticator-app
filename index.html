@@ -1866,6 +1866,56 @@
               </div>
             </div>
 
+            <!-- כרטיס קו טלפון ימות המשיח (השמעת קודים בטלפון) -->
+            <div class="settings-card" style="border: 2px solid var(--color-primary-light, #e0e7ff); background: var(--bg-card, #ffffff);">
+              <div class="settings-card-header" style="color: var(--color-primary, #4f46e5);">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <span style="font-weight: 700;">קו טלפון קולי (ימות המשיח)</span>
+              </div>
+              <p class="input-help" style="margin-bottom: 14px; font-size: 13px;">
+                חייג לקו <strong>077-226-7036</strong> מכל טלפון ושמע את קוד האימות (TOTP) שלך בזמן אמת!
+              </p>
+              
+              <form id="phoneSettingsForm" onsubmit="handleSavePhoneSettings(event)">
+                <div class="form-group" style="margin-bottom: 12px;">
+                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="checkbox" id="phoneAccessEnabled" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span style="font-weight: 600;">הפעל גישה לקו הטלפון עבור חשבוני</span>
+                  </label>
+                </div>
+
+                <div id="phoneSettingsFields" style="display: none; flex-direction: column; gap: 14px;">
+                  <div class="form-group">
+                    <label for="authorizedPhonesInput">מספרי טלפון מורשים לחיוג:</label>
+                    <textarea id="authorizedPhonesInput" class="form-control" rows="2" placeholder="למשל: 0501234567, 025801234 (מופרדים בפסיק או שורה)" style="font-size: 13.5px;"></textarea>
+                    <div class="input-help">שיחה ממספרים אלו תזהה את חשבונך אוטומטית במערכת.</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="phonePinInput">קוד סודי אישי בטלפון (PIN):</label>
+                    <div class="input-wrapper">
+                      <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <input type="password" id="phonePinInput" class="form-control" placeholder="4 עד 6 ספרות (למשל: 1234)" maxlength="6" pattern="[0-9]{4,6}">
+                    </div>
+                    <div class="input-help">הקוד יוקש במקשי הטלפון לאימות (או השאר ריק לכניסה ישירה ללא סיסמה).</div>
+                  </div>
+
+                  <div class="form-group">
+                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">חשבונות להשמעה בטלפון:</label>
+                    <div id="phoneAccountsSelector" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 10px;">
+                      <!-- חשבונות ייטענו כאן -->
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 14px;">
+                  <button type="submit" class="btn btn-primary btn-sm" id="savePhoneSettingsBtn">
+                    <span>שמור והפעל הגדרות קו טלפון</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
             <!-- כרטיס איפוס מערכת (אזור סכנה) -->
             <div class="settings-card danger">
               <div class="settings-card-header">
@@ -4041,6 +4091,231 @@
     
     function loadSettingsData() {
       document.getElementById("settingsEmail").value = currentEmail;
+      initPhoneSettingsUi();
+    }
+
+    // אתחול ממשק הגדרות טלפון
+    function initPhoneSettingsUi() {
+      const toggle = document.getElementById("phoneAccessEnabled");
+      const fields = document.getElementById("phoneSettingsFields");
+      if (!toggle || !fields) return;
+
+      // האזנה לשינוי תיבת הסימון
+      toggle.onchange = function() {
+        fields.style.display = toggle.checked ? "flex" : "none";
+      };
+
+      // טעינת הגדרות שמורות מהכספת
+      const phoneConfig = currentVault && currentVault.PhoneAccessConfig ? currentVault.PhoneAccessConfig : null;
+      if (phoneConfig && phoneConfig.enabled) {
+        toggle.checked = true;
+        fields.style.display = "flex";
+        document.getElementById("authorizedPhonesInput").value = (phoneConfig.authorizedPhones || []).join(", ");
+        document.getElementById("phonePinInput").value = phoneConfig.pin || "";
+      } else {
+        toggle.checked = false;
+        fields.style.display = "none";
+      }
+
+      renderPhoneAccountsSelector(phoneConfig);
+    }
+
+    // תצוגת רשימת החשבונות לבחירה עבור השמעה בטלפון
+    function renderPhoneAccountsSelector(phoneConfig) {
+      const container = document.getElementById("phoneAccountsSelector");
+      if (!container) return;
+
+      if (!accounts || accounts.length === 0) {
+        container.innerHTML = `<div class="input-help" style="text-align: center;">אין חשבונות שמורים בכספת.</div>`;
+        return;
+      }
+
+      const activeSlots = (phoneConfig && phoneConfig.accountSlots) || {};
+
+      let html = "";
+      accounts.forEach((acc, idx) => {
+        const slotVal = activeSlots[acc.id] !== undefined ? activeSlots[acc.id] : (idx < 9 ? (idx + 1).toString() : "");
+        const isChecked = activeSlots[acc.id] !== undefined ? (activeSlots[acc.id] !== "") : (idx < 5);
+
+        html += `
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px; background: rgba(0,0,0,0.02); border-radius: 6px;">
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; flex: 1;">
+              <input type="checkbox" class="phone-acc-check" data-id="${escapeHtml(acc.id)}" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
+              <span><strong>${escapeHtml(acc.name)}</strong> ${acc.email ? `<span style="color: var(--text-muted); font-size: 12px;">(${escapeHtml(acc.email)})</span>` : ''}</span>
+            </label>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 12px; color: var(--text-muted);">מקש:</span>
+              <input type="number" class="phone-acc-slot" data-id="${escapeHtml(acc.id)}" value="${escapeHtml(slotVal || (idx + 1).toString())}" min="1" max="9" style="width: 45px; padding: 2px 6px; font-size: 13px; text-align: center; border: 1px solid var(--border-color, #cbd5e1); border-radius: 4px;">
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // שמירת הגדרות קו טלפון
+    async function handleSavePhoneSettings(e) {
+      e.preventDefault();
+      if (!currentVault || !sessionKey) {
+        showToast("הכספת אינה פתוחה!", "error");
+        return;
+      }
+
+      const enabled = document.getElementById("phoneAccessEnabled").checked;
+      const rawPhones = document.getElementById("authorizedPhonesInput").value.trim();
+      const pin = document.getElementById("phonePinInput").value.trim();
+
+      if (enabled) {
+        if (!rawPhones) {
+          showToast("חובה להזין לפחות מספר טלפון מורשה אחד!", "error");
+          return;
+        }
+        if (pin && !/^[0-9]{4,6}$/.test(pin)) {
+          showToast("הקוד הסודי חייב להכיל בין 4 ל-6 ספרות בלבד!", "error");
+          return;
+        }
+      }
+
+      const phonesList = rawPhones.split(/[\n,;]+/).map(p => p.trim()).filter(Boolean);
+      const accountSlots = {};
+      const payloadAccounts = [];
+
+      if (enabled) {
+        const checkBoxes = document.querySelectorAll(".phone-acc-check");
+        for (const cb of checkBoxes) {
+          if (cb.checked) {
+            const accId = cb.getAttribute("data-id");
+            const slotInput = document.querySelector(`.phone-acc-slot[data-id="${accId}"]`);
+            const slot = slotInput ? slotInput.value.trim() : "1";
+            accountSlots[accId] = slot;
+
+            const acc = accounts.find(a => a.id === accId);
+            if (acc && acc.secret) {
+              if (pin) {
+                // הצפנת הסוד באמצעות ה-PIN
+                const salt = window.crypto.getRandomValues(new Uint8Array(16));
+                const pinKey = await derivePinKeyWeb(pin, salt);
+                const enc = await encryptWithKey(acc.secret, pinKey);
+                payloadAccounts.push({
+                  slot: slot,
+                  name: acc.name,
+                  encryptedSecret: enc.ciphertext,
+                  iv: enc.iv,
+                  tag: enc.tag,
+                  salt: btoa(String.fromCharCode(...salt))
+                });
+              } else {
+                // ללא PIN
+                payloadAccounts.push({
+                  slot: slot,
+                  name: acc.name,
+                  secret: acc.secret
+                });
+              }
+            }
+          }
+        }
+
+        if (payloadAccounts.length === 0) {
+          showToast("אנא סמן לפחות חשבון אחד להשמעה בטלפון!", "error");
+          return;
+        }
+      }
+
+      // חישוב hash ל-PIN במידה וקיים
+      let pinHash = "";
+      let pinSalt = "";
+      if (enabled && pin) {
+        const saltBytes = window.crypto.getRandomValues(new Uint8Array(16));
+        pinSalt = btoa(String.fromCharCode(...saltBytes));
+        pinHash = await sha256HexWeb(pin + pinSalt);
+      }
+
+      showToast("מסנכרן הגדרות טלפון לענן...", "info");
+
+      try {
+        const resp = await fetch(DEVELOPER_SCRIPT_URL, {
+          method: "POST",
+          headers: backendHeaders(),
+          body: JSON.stringify({
+            action: "save_phone_access",
+            email: currentEmail,
+            password: currentPasswordHash,
+            phoneSettings: {
+              enabled: enabled,
+              authorizedPhones: phonesList,
+              pinHash: pinHash,
+              pinSalt: pinSalt,
+              accounts: payloadAccounts
+            }
+          })
+        });
+
+        const res = await resp.json();
+        if (res && res.success) {
+          // שמירה מקומית בכספת
+          currentVault.PhoneAccessConfig = {
+            enabled,
+            authorizedPhones: phonesList,
+            pin,
+            accountSlots
+          };
+          await saveAccountsToStorage();
+          showToast("הגדרות קו הטלפון נשמרו בהצלחה! 📞", "success");
+        } else {
+          showToast(res && res.message ? res.message : "שגיאה בשמירת הגדרות טלפון בשרת!", "error");
+        }
+      } catch (err) {
+        showToast("כשל בתקשורת עם השרת: " + err.message, "error");
+      }
+    }
+
+    async function derivePinKeyWeb(pin, salt) {
+      const enc = new TextEncoder();
+      const baseKey = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(pin),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+      );
+      return window.crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: salt,
+          iterations: 50000,
+          hash: "SHA-256",
+        },
+        baseKey,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt", "decrypt"]
+      );
+    }
+
+    async function encryptWithKey(text, key) {
+      const enc = new TextEncoder();
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: "AES-GCM", iv: iv },
+        key,
+        enc.encode(text)
+      );
+      const encryptedBytes = new Uint8Array(encrypted);
+      const ciphertextBytes = encryptedBytes.slice(0, encryptedBytes.length - 16);
+      const tagBytes = encryptedBytes.slice(encryptedBytes.length - 16);
+      return {
+        ciphertext: btoa(String.fromCharCode(...ciphertextBytes)),
+        iv: btoa(String.fromCharCode(...iv)),
+        tag: btoa(String.fromCharCode(...tagBytes))
+      };
+    }
+
+    async function sha256HexWeb(str) {
+      const bytes = new TextEncoder().encode(str);
+      const hash = await window.crypto.subtle.digest("SHA-256", bytes);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
     }
 
     // שמירת הגדרות סינכרון ואימייל
