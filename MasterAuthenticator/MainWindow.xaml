@@ -616,7 +616,7 @@
                                 <StackPanel Margin="0,0,15,0">
                                     <Border CornerRadius="12" Background="#401E293B" BorderBrush="#15FFFFFF" BorderThickness="1" Padding="25" Margin="0,0,0,20">
                                         <StackPanel>
-                                            <TextBlock Text="ברוך הבא למדריך המובנה של Master Authenticator! כאן תלמד בדיוק איך למצוא ולהוסיף את חשבונות גוגל שלך לתוכנה בשלבים פשוטים ומצולמים." Foreground="#F8FAFC" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,20"/>
+                                            <TextBlock Text="ברוך הבא למדריך המובנה של Master Authenticator! כאן תלמד בדיוק איך למצוא ולהוסיף את החשבונות שלך לתוכנה בשלבים פשוטים ומצולמים." Foreground="#F8FAFC" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,20"/>
                                             <Image Source="/Resources/master_authenticator_concept.png" MaxHeight="280" Cursor="Hand" MouseLeftButtonDown="GuideImage_Click" ToolTip="לחץ להגדלה במסך מלא 🔍" Margin="0,0,0,10" Stretch="Uniform"/>
                                         </StackPanel>
                                     </Border>
