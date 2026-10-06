@@ -637,8 +637,9 @@ async function handleYemotCall(params, env) {
     if (accChoice) {
       const acc = accounts.find(a => String(a.slot) === accChoice);
       if (!acc) {
+        const maxSlotDigits = Math.max(...accounts.map(a => String(a.slot || 1).length), 1);
         return yemotTextResponse(
-          "read=t-הבחירה שהוקשה אינה קיימת, אנא נסו שנית=acc_choice,,2,1,10,NO,no,no,,,,,,,,no"
+          "read=t-הבחירה שהוקשה אינה קיימת, אנא נסו שנית=acc_choice,no," + maxSlotDigits + ",1,7,NO,no"
         );
       }
       return playOtpForAccount(acc, pin, accounts.length > 1);
@@ -664,8 +665,13 @@ function presentAccountsMenu(accounts) {
     return "עבור " + cleanName + " הקישו " + a.slot;
   });
   promptText += parts.join(", ");
+
+  // חישוב מקסימום ספרות הדרוש (לפי המספר הגבוה ביותר של החשבונות)
+  const maxSlotDigits = Math.max(...accounts.map(a => String(a.slot || 1).length), 1);
+
+  // הגדרת max_digits וביטול אישור לקליטה מיידית של הבחירה
   return yemotTextResponse(
-    "read=t-" + promptText + "=acc_choice,,2,1,10,NO,no,no,,,,,,,,no"
+    "read=t-" + promptText + "=acc_choice,no," + maxSlotDigits + ",1,7,NO,no"
   );
 }
 
@@ -704,7 +710,7 @@ async function playOtpForAccount(acc, pin, hasMultipleAccounts) {
     const message = "t-קוד האימות עבור " + accountName + timingMsg + ".d-" + totpCode + ".t-שוב.d-" + totpCode + "." + postOptions;
 
     return yemotTextResponse(
-      "read=" + message + "=post_choice,,1,1,10,NO,no,no,,,,,,,,no"
+      "read=" + message + "=post_choice,no,1,1,7,NO,no"
     );
   } catch (err) {
     return yemotTextResponse("id_list_message=t-שגיאה בחישוב קוד האימות&hangup");
