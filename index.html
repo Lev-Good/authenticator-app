@@ -4138,14 +4138,14 @@
         const isChecked = activeSlots[acc.id] !== undefined ? (activeSlots[acc.id] !== "") : (idx < 5);
 
         html += `
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px; background: rgba(0,0,0,0.02); border-radius: 6px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; background: rgba(0,0,0,0.02); border-radius: 6px; margin-bottom: 4px;">
             <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; flex: 1;">
-              <input type="checkbox" class="phone-acc-check" data-id="${escapeHtml(acc.id)}" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
+              <input type="checkbox" class="phone-acc-check" data-id="${escapeHtml(acc.id)}" ${isChecked ? 'checked' : ''} onchange="togglePhoneSlotInput(this)" style="cursor: pointer;">
               <span><strong>${escapeHtml(acc.name)}</strong> ${acc.email ? `<span style="color: var(--text-muted); font-size: 12px;">(${escapeHtml(acc.email)})</span>` : ''}</span>
             </label>
             <div style="display: flex; align-items: center; gap: 4px;">
               <span style="font-size: 12px; color: var(--text-muted);">מקש:</span>
-              <input type="number" class="phone-acc-slot" data-id="${escapeHtml(acc.id)}" value="${escapeHtml(slotVal || (idx + 1).toString())}" min="1" max="9" style="width: 45px; padding: 2px 6px; font-size: 13px; text-align: center; border: 1px solid var(--border-color, #cbd5e1); border-radius: 4px;">
+              <input type="number" class="phone-acc-slot" data-id="${escapeHtml(acc.id)}" value="${escapeHtml(slotVal)}" min="1" max="9" placeholder="1-9" ${isChecked ? '' : 'disabled'} style="width: 50px; padding: 2px 6px; font-size: 13px; text-align: center; border: 1px solid var(--border-color, #cbd5e1); border-radius: 4px; ${isChecked ? '' : 'opacity: 0.5;'}">
             </div>
           </div>
         `;
@@ -4153,6 +4153,29 @@
 
       container.innerHTML = html;
     }
+
+    window.togglePhoneSlotInput = function(cb) {
+      const accId = cb.getAttribute("data-id");
+      const slotInput = document.querySelector(`.phone-acc-slot[data-id="${accId}"]`);
+      if (slotInput) {
+        slotInput.disabled = !cb.checked;
+        slotInput.style.opacity = cb.checked ? "1" : "0.5";
+        if (cb.checked && !slotInput.value) {
+          const usedSlots = new Set();
+          document.querySelectorAll(".phone-acc-check:checked").forEach(c => {
+            const id = c.getAttribute("data-id");
+            const inp = document.querySelector(`.phone-acc-slot[data-id="${id}"]`);
+            if (inp && inp.value) usedSlots.add(inp.value.trim());
+          });
+          for (let s = 1; s <= 9; s++) {
+            if (!usedSlots.has(s.toString())) {
+              slotInput.value = s.toString();
+              break;
+            }
+          }
+        }
+      }
+    };
 
     // שמירת הגדרות קו טלפון
     async function handleSavePhoneSettings(e) {
@@ -4183,11 +4206,26 @@
 
       if (enabled) {
         const checkBoxes = document.querySelectorAll(".phone-acc-check");
+        const usedSlots = new Set();
         for (const cb of checkBoxes) {
           if (cb.checked) {
             const accId = cb.getAttribute("data-id");
             const slotInput = document.querySelector(`.phone-acc-slot[data-id="${accId}"]`);
-            const slot = slotInput ? slotInput.value.trim() : "1";
+            const slot = slotInput ? slotInput.value.trim() : "";
+
+            if (!slot || !/^[1-9]$/.test(slot)) {
+              showToast("יש לבחור מקש חוקי בין 1 ל-9 עבור כל חשבון שנבחר!", "error");
+              if (slotInput) slotInput.focus();
+              return;
+            }
+
+            if (usedSlots.has(slot)) {
+              showToast(`מקש ${slot} כבר הוגדר לחשבון אחר! יש לבחור מקש ייחודי (1-9) לכל חשבון.`, "error");
+              if (slotInput) slotInput.focus();
+              return;
+            }
+            usedSlots.add(slot);
+
             accountSlots[accId] = slot;
 
             const acc = accounts.find(a => a.id === accId);
