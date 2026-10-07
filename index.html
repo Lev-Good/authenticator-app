@@ -1228,6 +1228,226 @@
       border-bottom-color: var(--color-danger-border);
     }
 
+    /* עיצוב משודרג לכרטיס קו טלפון קולי */
+    .phone-settings-card {
+      border: 1.5px solid var(--color-primary-light, #c7d2fe);
+      background: var(--bg-surface);
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+    }
+    [data-theme="dark"] .phone-settings-card {
+      border-color: rgba(99, 102, 241, 0.35);
+      background: var(--bg-surface);
+    }
+    .phone-badge-hotline {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--color-primary);
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      direction: ltr;
+    }
+    .phone-status-toggle-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition-fast), border-color var(--transition-fast);
+    }
+    .phone-status-toggle-wrap:hover {
+      border-color: var(--color-primary);
+    }
+    .phone-status-badge {
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+    }
+    .phone-status-badge.active {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+    [data-theme="dark"] .phone-status-badge.active {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+    }
+    .phone-status-badge.inactive {
+      background: var(--bg-surface);
+      color: var(--text-dim);
+      border: 1px solid var(--border-subtle);
+    }
+    .phone-accounts-wrapper {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .phone-accounts-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .phone-accounts-search {
+      flex: 1;
+      min-width: 140px;
+      position: relative;
+    }
+    .phone-accounts-search input {
+      width: 100%;
+      padding: 6px 10px 6px 28px;
+      font-size: 12.5px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      color: var(--text-main);
+    }
+    .phone-accounts-search svg {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+    .phone-tools-btns {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .phone-tool-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 5px 10px;
+      font-size: 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+    }
+    .phone-tool-btn:hover {
+      background: var(--bg-card);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .phone-accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 230px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .phone-acc-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+    .phone-acc-card:hover {
+      border-color: var(--border-color);
+      box-shadow: var(--shadow-sm);
+    }
+    .phone-acc-card.selected {
+      border-color: var(--color-primary-light, #a5b4fc);
+      background: var(--bg-surface);
+    }
+    [data-theme="dark"] .phone-acc-card.selected {
+      border-color: rgba(99, 102, 241, 0.4);
+      background: rgba(99, 102, 241, 0.05);
+    }
+    .phone-acc-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+    .phone-acc-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .phone-acc-name {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .phone-acc-sub {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      direction: ltr;
+      text-align: right;
+    }
+    .phone-acc-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .phone-slot-box {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-subtle);
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+    .phone-slot-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .phone-acc-slot {
+      width: 48px;
+      padding: 3px 4px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background: var(--bg-surface);
+      color: var(--text-main);
+      transition: border-color var(--transition-fast);
+    }
+    .phone-acc-slot:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+    }
+
     /* ========================================================
        מודאל הוספת/עריכת חשבון (ACCOUNT MODAL 2-COLUMN)
        ======================================================== */
@@ -1867,36 +2087,54 @@
             </div>
 
             <!-- כרטיס קו טלפון ימות המשיח (השמעת קודים בטלפון) -->
-            <div class="settings-card" style="border: 2px solid var(--color-primary-light, #e0e7ff); background: var(--bg-card, #ffffff);">
-              <div class="settings-card-header" style="color: var(--color-primary, #4f46e5);">
-                <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                <span style="font-weight: 700;">קו טלפון קולי (ימות המשיח)</span>
+            <div class="settings-card phone-settings-card">
+              <div class="settings-card-header" style="justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px; color: var(--color-primary);">
+                  <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center;">
+                    <svg class="icon icon-sm" style="color: var(--color-primary);" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  </div>
+                  <div>
+                    <span style="font-weight: 700; font-size: 16px;">קו טלפון קולי</span>
+                    <div style="font-size: 11.5px; color: var(--text-muted); font-weight: 400;">השמעת קודי אימות TOTP בטלפון (ימות המשיח)</div>
+                  </div>
+                </div>
+                <div class="phone-badge-hotline">
+                  <svg class="icon icon-xs" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                  <span>077-226-7036</span>
+                </div>
               </div>
-              <p class="input-help" style="margin-bottom: 12px; font-size: 13px;">
-                חייג לקו <strong>077-226-7036</strong> מכל טלפון ושמע את קוד האימות (TOTP) שלך בזמן אמת! פתרון מושלם לבעלי טלפון כשר או כאשר אין גישה למחשב.
+
+              <p class="input-help" style="margin: 12px 0; font-size: 13px; line-height: 1.5;">
+                חייגו למספר המערכת מכל מכשיר (כולל טלפון כשר), הקישו את קוד החשבון המבוקש וקבלו את קוד האימות העדכני שלכם בקול צלול.
               </p>
-              <div style="background: var(--bg-subtle, #f8fafc); border-right: 3px solid var(--color-primary, #4f46e5); padding: 8px 12px; border-radius: 6px; font-size: 12.5px; color: var(--text-muted, #64748b); line-height: 1.5; margin-bottom: 14px;">
+
+              <div style="background: var(--bg-subtle, #f8fafc); border-right: 3px solid var(--color-primary, #4f46e5); padding: 9px 12px; border-radius: 6px; font-size: 12px; color: var(--text-muted, #64748b); line-height: 1.5; margin-bottom: 14px;">
                 <strong style="color: var(--text-main, #1e293b);"><svg class="icon icon-xs" style="vertical-align: -2px; margin-left: 4px;" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>אבטחה מקצועית:</strong>
                 מפתחות ה-TOTP נשמרים בהצפנת AES-GCM המפוענחת בזמן אמת בשרתי Edge מאובטחים אך ורק באמצעות מפתח הנגזר מה-PIN שלכם (PBKDF2), בכפוף לזיהוי מספר מורשה והגנת Brute-Force.
               </div>
               
               <form id="phoneSettingsForm" onsubmit="handleSavePhoneSettings(event)">
-                <div class="form-group" style="margin-bottom: 12px;">
-                  <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="phoneAccessEnabled" style="width: 18px; height: 18px; cursor: pointer;">
-                    <span style="font-weight: 600;">הפעל גישה לקו הטלפון עבור חשבוני</span>
+                <!-- מתג הפעלה ראשי מעוצב -->
+                <div class="phone-status-toggle-wrap" onclick="togglePhoneCheckboxViaContainer(event)" style="margin-bottom: 14px;">
+                  <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; pointer-events: none;">
+                    <input type="checkbox" id="phoneAccessEnabled" style="width: 18px; height: 18px; cursor: pointer; pointer-events: auto;">
+                    <div>
+                      <div style="font-weight: 600; font-size: 14px; color: var(--text-main);">הפעלת גישה טלפונית לחשבון</div>
+                      <div style="font-size: 12px; color: var(--text-dim);">מאפשר למערכת לזהות אותך בשיחה נכנסת</div>
+                    </div>
                   </label>
+                  <span id="phoneStatusBadge" class="phone-status-badge inactive">כבוי</span>
                 </div>
 
                 <div id="phoneSettingsFields" style="display: none; flex-direction: column; gap: 14px;">
                   <div class="form-group">
-                    <label for="authorizedPhonesInput">מספרי טלפון מורשים לחיוג:</label>
+                    <label for="authorizedPhonesInput" style="font-weight: 600; font-size: 13px;">מספרי טלפון מורשים לחיוג:</label>
                     <textarea id="authorizedPhonesInput" class="form-control" rows="2" placeholder="למשל: 0501234567, 025801234 (מופרדים בפסיק או שורה)" style="font-size: 13.5px;"></textarea>
                     <div class="input-help">שיחה ממספרים אלו תזהה את חשבונך אוטומטית במערכת.</div>
                   </div>
 
                   <div class="form-group">
-                    <label for="phonePinInput">קוד סודי אישי בטלפון (PIN):</label>
+                    <label for="phonePinInput" style="font-weight: 600; font-size: 13px;">קוד סודי אישי בטלפון (PIN):</label>
                     <div class="input-wrapper">
                       <svg class="icon icon-sm input-icon-svg" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                       <input type="password" id="phonePinInput" class="form-control" placeholder="4 עד 6 ספרות (למשל: 1234)" maxlength="6" pattern="[0-9]{4,6}">
@@ -1905,15 +2143,44 @@
                   </div>
 
                   <div class="form-group">
-                    <label style="font-weight: 600; margin-bottom: 6px; display: block;">חשבונות להשמעה בטלפון:</label>
-                    <div id="phoneAccountsSelector" style="display: flex; flex-direction: column; gap: 8px; max-height: 180px; overflow-y: auto; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 10px;">
-                      <!-- חשבונות ייטענו כאן -->
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+                      <label style="font-weight: 600; font-size: 13px; margin: 0;">חשבונות להשמעה בטלפון:</label>
+                      <span id="phoneSelectedCountBadge" style="font-size: 12px; color: var(--color-primary); font-weight: 600;">0 חשבונות נבחרו</span>
+                    </div>
+
+                    <div class="phone-accounts-wrapper">
+                      <div class="phone-accounts-toolbar">
+                        <div class="phone-accounts-search">
+                          <input type="text" id="phoneAccSearchInput" placeholder="חיפוש חשבון לפי שם או מייל..." oninput="filterPhoneAccountsList(this.value)">
+                          <svg class="icon icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </div>
+                        <div class="phone-tools-btns">
+                          <button type="button" class="phone-tool-btn" onclick="phoneSelectAllAccounts(true)" title="סמן את כל החשבונות">
+                            <span>בחר הכל</span>
+                          </button>
+                          <button type="button" class="phone-tool-btn" onclick="phoneSelectAllAccounts(false)" title="נקה את כל הבחירות">
+                            <span>נקה</span>
+                          </button>
+                          <button type="button" class="phone-tool-btn" onclick="phoneAutoNumberSlots()" title="מספור אוטומטי עוקב של המקשים (1, 2, 3...)">
+                            <svg class="icon icon-xs" viewBox="0 0 24 24"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+                            <span>מספור אוטומטי</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div id="phoneAccountsSelector" class="phone-accounts-list">
+                        <!-- כרטיסי חשבונות ייטענו כאן דינמית -->
+                      </div>
+                    </div>
+                    <div class="input-help" style="margin-top: 6px;">
+                      💡 טיפ: ניתן להגדיר כל מספר מקש (למשל: 1, 2, 10, 15, 23...). בשיחה עם מספרים דו-ספרתיים, המערכת תקלוט את המספר מיד.
                     </div>
                   </div>
                 </div>
 
-                <div style="margin-top: 14px;">
+                <div style="margin-top: 16px;">
                   <button type="submit" class="btn btn-primary btn-sm" id="savePhoneSettingsBtn">
+                    <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     <span>שמור והפעל הגדרות קו טלפון</span>
                   </button>
                 </div>
@@ -4102,11 +4369,24 @@
     function initPhoneSettingsUi() {
       const toggle = document.getElementById("phoneAccessEnabled");
       const fields = document.getElementById("phoneSettingsFields");
+      const badge = document.getElementById("phoneStatusBadge");
       if (!toggle || !fields) return;
+
+      const updateBadge = (active) => {
+        if (!badge) return;
+        if (active) {
+          badge.textContent = "פעיל";
+          badge.className = "phone-status-badge active";
+        } else {
+          badge.textContent = "כבוי";
+          badge.className = "phone-status-badge inactive";
+        }
+      };
 
       // האזנה לשינוי תיבת הסימון
       toggle.onchange = function() {
         fields.style.display = toggle.checked ? "flex" : "none";
+        updateBadge(toggle.checked);
       };
 
       // טעינת הגדרות שמורות מהכספת
@@ -4114,15 +4394,26 @@
       if (phoneConfig && phoneConfig.enabled) {
         toggle.checked = true;
         fields.style.display = "flex";
+        updateBadge(true);
         document.getElementById("authorizedPhonesInput").value = (phoneConfig.authorizedPhones || []).join(", ");
         document.getElementById("phonePinInput").value = phoneConfig.pin || "";
       } else {
         toggle.checked = false;
         fields.style.display = "none";
+        updateBadge(false);
       }
 
       renderPhoneAccountsSelector(phoneConfig);
     }
+
+    window.togglePhoneCheckboxViaContainer = function(e) {
+      if (e.target && (e.target.id === "phoneAccessEnabled" || e.target.closest("input"))) return;
+      const toggle = document.getElementById("phoneAccessEnabled");
+      if (toggle) {
+        toggle.checked = !toggle.checked;
+        toggle.dispatchEvent(new Event("change"));
+      }
+    };
 
     // תצוגת רשימת החשבונות לבחירה עבור השמעה בטלפון
     function renderPhoneAccountsSelector(phoneConfig) {
@@ -4130,7 +4421,8 @@
       if (!container) return;
 
       if (!accounts || accounts.length === 0) {
-        container.innerHTML = `<div class="input-help" style="text-align: center;">אין חשבונות שמורים בכספת.</div>`;
+        container.innerHTML = `<div class="input-help" style="text-align: center; padding: 18px;">אין חשבונות שמורים בכספת כעת.</div>`;
+        updatePhoneSelectedCount();
         return;
       }
 
@@ -4138,47 +4430,120 @@
 
       let html = "";
       accounts.forEach((acc, idx) => {
-        const slotVal = activeSlots[acc.id] !== undefined ? activeSlots[acc.id] : (idx < 9 ? (idx + 1).toString() : "");
-        const isChecked = activeSlots[acc.id] !== undefined ? (activeSlots[acc.id] !== "") : (idx < 5);
+        // ברירת מחדל: אם יש שמירה קודמת משתמשים בה, אחרת מספר סידורי רגיל 1, 2, 3...
+        const slotVal = activeSlots[acc.id] !== undefined ? activeSlots[acc.id] : (idx + 1).toString();
+        const isChecked = activeSlots[acc.id] !== undefined ? (activeSlots[acc.id] !== "") : true;
 
         html += `
-          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; background: rgba(0,0,0,0.02); border-radius: 6px; margin-bottom: 4px;">
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; cursor: pointer; flex: 1;">
-              <input type="checkbox" class="phone-acc-check" data-id="${escapeHtml(acc.id)}" ${isChecked ? 'checked' : ''} onchange="togglePhoneSlotInput(this)" style="cursor: pointer;">
-              <span><strong>${escapeHtml(acc.name)}</strong> ${acc.email ? `<span style="color: var(--text-muted); font-size: 12px;">(${escapeHtml(acc.email)})</span>` : ''}</span>
-            </label>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <span style="font-size: 12px; color: var(--text-muted);">מקש:</span>
-              <input type="number" class="phone-acc-slot" data-id="${escapeHtml(acc.id)}" value="${escapeHtml(slotVal)}" min="1" max="9" placeholder="1-9" ${isChecked ? '' : 'disabled'} style="width: 50px; padding: 2px 6px; font-size: 13px; text-align: center; border: 1px solid var(--border-color, #cbd5e1); border-radius: 4px; ${isChecked ? '' : 'opacity: 0.5;'}">
+          <div class="phone-acc-card ${isChecked ? 'selected' : ''}" id="phoneAccRow_${escapeHtml(acc.id)}" data-name="${escapeHtml((acc.name || '').toLowerCase())}" data-email="${escapeHtml((acc.email || '').toLowerCase())}">
+            <div class="phone-acc-left" onclick="togglePhoneCardCheckbox('${escapeHtml(acc.id)}')">
+              <input type="checkbox" class="phone-acc-check" data-id="${escapeHtml(acc.id)}" ${isChecked ? 'checked' : ''} onchange="togglePhoneSlotInput(this)" onclick="event.stopPropagation()" style="width: 17px; height: 17px; cursor: pointer; accent-color: var(--color-primary);">
+              <div class="phone-acc-info">
+                <span class="phone-acc-name">${escapeHtml(acc.name)}</span>
+                ${acc.email ? `<span class="phone-acc-sub">${escapeHtml(acc.email)}</span>` : (acc.category ? `<span class="phone-acc-sub">${escapeHtml(acc.category)}</span>` : '')}
+              </div>
+            </div>
+            <div class="phone-acc-right">
+              <div class="phone-slot-box">
+                <span class="phone-slot-label">מקש:</span>
+                <input type="number" class="phone-acc-slot" data-id="${escapeHtml(acc.id)}" value="${escapeHtml(slotVal)}" min="1" max="999" placeholder="1-99" ${isChecked ? '' : 'disabled'} style="${isChecked ? '' : 'opacity: 0.4;'}" title="מספר המקש בטלפון (1-999)">
+              </div>
             </div>
           </div>
         `;
       });
 
       container.innerHTML = html;
+      updatePhoneSelectedCount();
     }
+
+    window.togglePhoneCardCheckbox = function(accId) {
+      const cb = document.querySelector(`.phone-acc-check[data-id="${accId}"]`);
+      if (cb) {
+        cb.checked = !cb.checked;
+        togglePhoneSlotInput(cb);
+      }
+    };
 
     window.togglePhoneSlotInput = function(cb) {
       const accId = cb.getAttribute("data-id");
+      const card = document.getElementById(`phoneAccRow_${accId}`);
+      if (card) {
+        if (cb.checked) {
+          card.classList.add("selected");
+        } else {
+          card.classList.remove("selected");
+        }
+      }
+
       const slotInput = document.querySelector(`.phone-acc-slot[data-id="${accId}"]`);
       if (slotInput) {
         slotInput.disabled = !cb.checked;
-        slotInput.style.opacity = cb.checked ? "1" : "0.5";
+        slotInput.style.opacity = cb.checked ? "1" : "0.4";
         if (cb.checked && !slotInput.value) {
           const usedSlots = new Set();
           document.querySelectorAll(".phone-acc-check:checked").forEach(c => {
             const id = c.getAttribute("data-id");
             const inp = document.querySelector(`.phone-acc-slot[data-id="${id}"]`);
-            if (inp && inp.value) usedSlots.add(inp.value.trim());
+            if (inp && inp.value) usedSlots.add(parseInt(inp.value.trim(), 10));
           });
-          for (let s = 1; s <= 9; s++) {
-            if (!usedSlots.has(s.toString())) {
+          for (let s = 1; s <= 999; s++) {
+            if (!usedSlots.has(s)) {
               slotInput.value = s.toString();
               break;
             }
           }
         }
       }
+      updatePhoneSelectedCount();
+    };
+
+    function updatePhoneSelectedCount() {
+      const badge = document.getElementById("phoneSelectedCountBadge");
+      if (!badge) return;
+      const count = document.querySelectorAll(".phone-acc-check:checked").length;
+      badge.textContent = `${count} חשבונות נבחרו`;
+    }
+
+    // סינון רשימת החשבונות בתוך הגדרות הטלפון
+    window.filterPhoneAccountsList = function(searchTerm) {
+      const term = (searchTerm || "").trim().toLowerCase();
+      const rows = document.querySelectorAll("#phoneAccountsSelector .phone-acc-card");
+      rows.forEach(row => {
+        const name = row.getAttribute("data-name") || "";
+        const email = row.getAttribute("data-email") || "";
+        if (!term || name.includes(term) || email.includes(term)) {
+          row.style.display = "flex";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    };
+
+    // בחירה או ביטול בחירה של כל החשבונות
+    window.phoneSelectAllAccounts = function(selectAll) {
+      const checkBoxes = document.querySelectorAll(".phone-acc-check");
+      checkBoxes.forEach(cb => {
+        cb.checked = selectAll;
+        togglePhoneSlotInput(cb);
+      });
+    };
+
+    // מספור אוטומטי עוקב של המקשים (1, 2, 3...)
+    window.phoneAutoNumberSlots = function() {
+      let currentNumber = 1;
+      const checkBoxes = document.querySelectorAll(".phone-acc-check");
+      checkBoxes.forEach(cb => {
+        if (cb.checked) {
+          const accId = cb.getAttribute("data-id");
+          const slotInput = document.querySelector(`.phone-acc-slot[data-id="${accId}"]`);
+          if (slotInput) {
+            slotInput.value = currentNumber.toString();
+            currentNumber++;
+          }
+        }
+      });
+      showToast("המקשים מוספרו אוטומטית לפי סדר החשבונות (1, 2, 3...) 🔢", "success");
     };
 
     // שמירת הגדרות קו טלפון
@@ -4217,14 +4582,14 @@
             const slotInput = document.querySelector(`.phone-acc-slot[data-id="${accId}"]`);
             const slot = slotInput ? slotInput.value.trim() : "";
 
-            if (!slot || !/^[1-9]$/.test(slot)) {
-              showToast("יש לבחור מקש חוקי בין 1 ל-9 עבור כל חשבון שנבחר!", "error");
+            if (!slot || !/^[1-9][0-9]{0,2}$/.test(slot)) {
+              showToast("יש לבחור מספר מקש חוקי (למשל: 1, 2, 10, 15, 23...) עבור כל חשבון שנבחר!", "error");
               if (slotInput) slotInput.focus();
               return;
             }
 
             if (usedSlots.has(slot)) {
-              showToast(`מקש ${slot} כבר הוגדר לחשבון אחר! יש לבחור מקש ייחודי (1-9) לכל חשבון.`, "error");
+              showToast(`מקש ${slot} כבר הוגדר לחשבון אחר! יש לבחור מקש ייחודי לכל חשבון.`, "error");
               if (slotInput) slotInput.focus();
               return;
             }
